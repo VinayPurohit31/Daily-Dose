@@ -15,7 +15,7 @@ export default function LoginScreen() {
                     style={styles.image}
                 />
             </View>
-            <View style={styles.content}>
+            <View style={styles.content} id='12'>
                 <Text style={styles.title}>Stay on Track, Stay Healthy!</Text>
                 <Text style={styles.subtitle}>
                     Track your meds, take them on time, and live a healthy life.
@@ -33,7 +33,9 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
     imageContainer: {
         alignItems: 'center',
-        marginTop: 35,
+        marginTop: 1,
+        padding: 20,
+
     },
     image: {
         width: 210,
@@ -43,8 +45,10 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         padding: 25,
-        backgroundColor: Colors.PRIMARY, // Ensure Colors is defined
-        justifyContent: 'center',
+        backgroundColor: Colors.PRIMARY, 
+        borderTopLeftRadius: 15,  // Added curve on the top left corner
+        borderTopRightRadius: 15, // Added curve on the top right corner
+        justifyContent: 'center', // Moved up by 30 units
     },
     title: {
         fontSize: 30,
@@ -61,9 +65,19 @@ const styles = StyleSheet.create({
     button: {
         padding: 15,
         backgroundColor: 'white',
-        borderRadius: 99,
+        borderRadius: 7,
         marginTop: 20,
         alignItems: 'center',
+        borderWidth: 1,
+        borderWidth: 1,
+        borderColor: 'black',
+        backgroundColor: 'white',
+        shadowColor: '#0084ff',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 5,
+               
     },
     buttonText: {
         fontSize: 16,

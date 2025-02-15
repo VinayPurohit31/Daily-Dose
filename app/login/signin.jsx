@@ -6,7 +6,6 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function SignInScreen() {
     const router = useRouter();
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
@@ -19,14 +18,11 @@ export default function SignInScreen() {
         const auth = getAuth();
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                const user = userCredential.user;
-                console.log('Logged in:', user);
+                console.log('Logged in:', userCredential.user);
                 alert('Login successful!');
-                // Navigate to the home screen or dashboard
                 router.replace('(tabs)');
             })
             .catch((error) => {
-                console.log(error.code);
                 if (error.code === 'auth/user-not-found') {
                     alert('User not found. Please check your email.');
                 } else if (error.code === 'auth/wrong-password') {
@@ -38,16 +34,17 @@ export default function SignInScreen() {
     };
 
     return (
-        <View style={{ padding: 25 }}>
+        <View style={styles.container}>
             <Text style={styles.textHeader}>Let's Sign You In</Text>
-            <Text style={styles.subHeader}>Welcome Back</Text>
-            <Text style={styles.subHeader}>We Missed You!</Text>
+            <Text style={styles.subHeader}>Welcome Back! We Missed You</Text>
 
-            <View>
+            <View style={styles.inputContainer}>
                 <Text style={styles.textDisplay}>Email</Text>
                 <TextInput
                     placeholder="Enter your Email"
                     style={styles.input}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                     onChangeText={(value) => setEmail(value)}
                     value={email}
                 />
@@ -64,6 +61,7 @@ export default function SignInScreen() {
             <TouchableOpacity style={styles.buttonE} onPress={onLogin}>
                 <Text style={styles.buttonTextL}>Login</Text>
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.buttonC} onPress={() => router.push('login/signUp')}>
                 <Text style={styles.buttonTextCreateAcc}>Create Account</Text>
             </TouchableOpacity>
@@ -72,62 +70,72 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+        padding: 25,
+        justifyContent: 'center',
+    },
     textHeader: {
-        fontSize: 30,
+        fontSize: 32,
         fontWeight: 'bold',
-        color: 'black',
+        color: Colors.PRIMARY,
+        textAlign: 'center',
     },
     subHeader: {
-        marginTop: 10,
-        fontSize: 30,
-        fontWeight: 'bold',
+        fontSize: 18,
         color: Colors.GRAY,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    inputContainer: {
+        marginBottom: 20,
+    },
+    textDisplay: {
+        fontSize: 16,
+        marginTop: 10,
+        fontWeight: 'bold',
+        color: Colors.DARK_GRAY,
     },
     input: {
         borderWidth: 1,
-        borderColor: 'gray',
+        borderColor: Colors.LIGHT_GRAY,
         backgroundColor: 'white',
-        padding: 10,
-        borderRadius: 7,
+        padding: 12,
+        borderRadius: 10,
         marginTop: 5,
-    },
-    textDisplay: {
-        fontSize: 20,
-        marginTop: 10,
-        color: 'black',
+        fontSize: 16,
     },
     buttonE: {
-        padding: 15,
+        paddingVertical: 15,
+        borderRadius: 10,
+        marginTop: 20,
+        alignItems: 'center',
         backgroundColor: Colors.PRIMARY,
-        borderRadius: 7,
-        borderColor: 'black',
-        borderWidth: 1,
-        marginTop: 30,
-        alignItems: 'center',
-        shadowColor: '#ff4b2b',
+        shadowColor: Colors.PRIMARY,
         shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.4,
         shadowRadius: 10,
         elevation: 5,
-    },
-    buttonC: {
-        padding: 15,
-        backgroundColor: 'white',
-        borderRadius: 7,
-        marginTop: 15,
-        alignItems: 'center',
-        shadowColor: '#0084ff',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
-        elevation: 5,
-        borderWidth: 1,
-        borderColor: Colors.PRIMARY,
     },
     buttonTextL: {
-        fontSize: 16,
+        fontSize: 18,
         color: 'white',
         fontWeight: 'bold',
+    },
+    buttonC: {
+        paddingVertical: 15,
+        borderRadius: 10,
+        marginTop: 15,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Colors.PRIMARY,
+        backgroundColor: 'white',
+        shadowColor: '#0084ff',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 5,
     },
     buttonTextCreateAcc: {
         fontSize: 16,

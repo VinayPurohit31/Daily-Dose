@@ -3,14 +3,13 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-nativ
 import Colors from '../../constant/Colors';
 import { useRouter } from 'expo-router';
 import { auth } from '../../config/FireBaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 export default function SignUp() {
     const router = useRouter();
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const[username,setUsername]=useState('');
+    const [username, setUsername] = useState('');
 
     const onCreateAccount = () => {
         if (email === '' || password === '' || username === '') {
@@ -19,18 +18,16 @@ export default function SignUp() {
         }
 
         createUserWithEmailAndPassword(auth, email, password)
-            .then(async(userCredential) => {
+            .then(async (userCredential) => {
                 const user = userCredential.user;
                 await updateProfile(user, {
                     displayName: username,
                 });
                 router.push('(tabs)');
                 alert('Account Created Successfully!');
-                
             })
             .catch((error) => {
-                const errorCode = error.code;
-                if (errorCode === 'auth/email-already-in-use') {
+                if (error.code === 'auth/email-already-in-use') {
                     alert('Email already in use');
                 } else {
                     alert('Error: ' + error.message);
@@ -39,17 +36,22 @@ export default function SignUp() {
     };
 
     return (
-        <View style={{ padding: 25 }}>
+        <View style={styles.container}>
             <Text style={styles.textHeader}>Create Account</Text>
-            <Text style={styles.subHeader}>Welcome To Daily-Dose</Text>
+            <Text style={styles.subHeader}>Welcome to Daily Dose!</Text>
 
-            <View style={{ marginTop: 20 }}>
+            <View style={styles.inputContainer}>
                 <Text style={styles.textDisplay}>Your Name</Text>
-                <TextInput onChangeText={(value)=>setUsername(value)} placeholder="Enter your Name" style={styles.input} />
+                <TextInput 
+                    onChangeText={(value) => setUsername(value)} 
+                    placeholder="Enter your Name" 
+                    style={styles.input} 
+                />
                 <Text style={styles.textDisplay}>Email</Text>
                 <TextInput
                     placeholder="Enter your Email"
                     style={styles.input}
+                    keyboardType="email-address"
                     onChangeText={(value) => setEmail(value)}
                 />
                 <Text style={styles.textDisplay}>Password</Text>
@@ -64,6 +66,7 @@ export default function SignUp() {
             <TouchableOpacity style={styles.buttonE} onPress={onCreateAccount}>
                 <Text style={styles.buttonTextL}>Create Account</Text>
             </TouchableOpacity>
+
             <TouchableOpacity style={styles.buttonC} onPress={() => router.push('login/signin')}>
                 <Text style={styles.buttonTextCreateAcc}>Already have an account? Login</Text>
             </TouchableOpacity>
@@ -72,63 +75,72 @@ export default function SignUp() {
 }
 
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#F5F5F5',
+        padding: 25,
+        justifyContent: 'center',
+    },
     textHeader: {
-        fontSize: 30,
+        fontSize: 32,
         fontWeight: 'bold',
-        color: 'black',
+        color: Colors.PRIMARY,
         textAlign: 'center',
     },
     subHeader: {
-        marginTop: 10,
-        fontSize: 30,
-        fontWeight: 'bold',
+        fontSize: 18,
         color: Colors.GRAY,
         textAlign: 'center',
+        marginBottom: 20,
+    },
+    inputContainer: {
+        marginBottom: 20,
+    },
+    textDisplay: {
+        fontSize: 16,
+        marginTop: 10,
+        fontWeight: 'bold',
+        color: Colors.DARK_GRAY,
     },
     input: {
         borderWidth: 1,
-        borderColor: 'gray',
+        borderColor: Colors.LIGHT_GRAY,
         backgroundColor: 'white',
-        padding: 10,
-        borderRadius: 7,
+        padding: 12,
+        borderRadius: 10,
         marginTop: 5,
-    },
-    textDisplay: {
-        fontSize: 20,
-        marginTop: 10,
-        color: 'black',
+        fontSize: 16,
     },
     buttonE: {
-        padding: 15,
+        paddingVertical: 15,
+        borderRadius: 10,
+        marginTop: 20,
+        alignItems: 'center',
         backgroundColor: Colors.PRIMARY,
-        borderRadius: 7,
-        borderWidth: 1,
-        marginTop: 30,
-        alignItems: 'center',
-        shadowColor: '#ff4b2b',
+        shadowColor: Colors.PRIMARY,
         shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.5,
+        shadowOpacity: 0.4,
         shadowRadius: 10,
         elevation: 5,
-    },
-    buttonC: {
-        padding: 15,
-        backgroundColor: 'white',
-        borderRadius: 7,
-        marginTop: 15,
-        alignItems: 'center',
-        shadowColor: '#0084ff',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
-        elevation: 5,
-        borderWidth: 1,
-        borderColor: Colors.PRIMARY,
     },
     buttonTextL: {
-        fontSize: 16,
+        fontSize: 18,
         color: 'white',
         fontWeight: 'bold',
+    },
+    buttonC: {
+        paddingVertical: 15,
+        borderRadius: 10,
+        marginTop: 15,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Colors.PRIMARY,
+        backgroundColor: 'white',
+        shadowColor: '#0084ff',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 5,
     },
     buttonTextCreateAcc: {
         fontSize: 16,
