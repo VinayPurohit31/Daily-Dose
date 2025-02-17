@@ -46,8 +46,8 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 25,
         backgroundColor: Colors.PRIMARY, 
-        borderTopLeftRadius: 15,  // Added curve on the top left corner
-        borderTopRightRadius: 15, // Added curve on the top right corner
+        borderTopLeftRadius: 20,  // Added curve on the top left corner
+        borderTopRightRadius: 20, // Added curve on the top right corner
         justifyContent: 'center', // Moved up by 30 units
     },
     title: {
@@ -87,6 +87,7 @@ const styles = StyleSheet.create({
     tp: {
         color: 'white',
         marginTop: 10,
-        fontSize: 12,
+        fontSize: 15,
+        textAlign: 'center',
     },
 });

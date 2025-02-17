@@ -3,6 +3,8 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-nativ
 import Colors from '../../constant/Colors';
 import { useRouter } from 'expo-router';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { setLocalStorage } from '../../service/Storage';
+
 
 export default function SignInScreen() {
     const router = useRouter();
@@ -17,8 +19,9 @@ export default function SignInScreen() {
 
         const auth = getAuth();
         signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
+            .then(async(userCredential) => {
                 console.log('Logged in:', userCredential.user);
+               await setLocalStorage('userDetail',user);
                 alert('Login successful!');
                 router.replace('(tabs)');
             })

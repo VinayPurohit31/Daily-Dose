@@ -3,21 +3,25 @@ import React, { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { auth } from '../../config/FireBaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+import { getLocalStorage } from '../../sercvice/Storage';
+
 
 export default function TabLayout() {
     const router = useRouter();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                router.replace('/login');
-            }
-        });
-
-        return () => unsubscribe(); // Cleanup function
+        GetuserDetail();
     }, []);
+
+    const GetuserDetail=async()=>{
+        const userInfo= await getLocalStorage('userDetail');
+        if(userInfo){
+            router.replace('/login')
+
+    }
+    }
+    
+
 
     return (
         <Tabs screenOptions={{ headerShown: false }}>
