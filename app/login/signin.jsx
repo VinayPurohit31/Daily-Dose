@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import Colors from '../../constant/Colors';
 import { useRouter } from 'expo-router';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../config/FireBaseConfig'; // ✅ Correct import
 import { setLocalStorage } from '../../service/Storage';
-
 
 export default function SignInScreen() {
     const router = useRouter();
@@ -17,11 +17,12 @@ export default function SignInScreen() {
             return;
         }
 
-        const auth = getAuth();
         signInWithEmailAndPassword(auth, email, password)
-            .then(async(userCredential) => {
-                console.log('Logged in:', userCredential.user);
-               await setLocalStorage('userDetail',user);
+            .then(async (userCredential) => {
+                const user = userCredential.user; // Get user from the userCredential
+                console.log('Logged in:', user);
+
+                await setLocalStorage('userDetail', user); // Store the actual user object
                 alert('Login successful!');
                 router.replace('(tabs)');
             })

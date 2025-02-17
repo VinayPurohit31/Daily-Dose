@@ -1,27 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const setLocalStorage = async (key, value) => {
-    try {
-        await AsyncStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-        console.error('Error saving data:', error);
-    }
-};
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+}
 
 export const getLocalStorage = async (key) => {
-    try {
-        const data = await AsyncStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
-    } catch (error) {
-        console.error('Error retrieving data:', error);
-        return null;
-    }
-};
+    const result = await AsyncStorage.getItem(key);
+    return JSON.parse(result); // Use result instead of data
+}
 
 export const removeLocalStorage = async (key) => {
-    try {
-        await AsyncStorage.removeItem(key);
-    } catch (error) {
-        console.error('Error removing data:', error);
-    }
-};
+    await AsyncStorage.removeItem(key); // Use removeItem instead of clear for specific key
+}

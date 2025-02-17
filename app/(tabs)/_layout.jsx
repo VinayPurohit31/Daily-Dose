@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { getLocalStorage } from '../../sercvice/Storage';
+import { getLocalStorage } from '../../service/Storage';
 
 
 export default function TabLayout() {
@@ -15,7 +15,7 @@ export default function TabLayout() {
 
     const GetuserDetail=async()=>{
         const userInfo= await getLocalStorage('userDetail');
-        if(userInfo){
+        if(!userInfo){
             router.replace('/login')
 
     }
