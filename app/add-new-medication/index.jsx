@@ -1,15 +1,15 @@
-import { View, Text } from 'react-native'
-import React from 'react'
-import AddMedHeader from '../../components/AddMedHeader'
-import AddMedForm from '../../components/AddMedForm'
+import { ScrollView } from 'react-native';
+import React from 'react';
+import AddMedHeader from '../../components/AddMedHeader';
+import AddMedForm from '../../components/AddMedForm';
 
 const AddMedicationScreen = () => {
   return (
-    <View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <AddMedHeader />
       <AddMedForm />
-    </View>
-  )
-}
+    </ScrollView>
+  );
+};
 
-export default AddMedicationScreen
+export default AddMedicationScreen;
