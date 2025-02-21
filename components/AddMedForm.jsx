@@ -11,30 +11,21 @@ import { InteractionManager } from 'react-native';
 import ConstantString from '../constant/ConstantString';
 import Colors from '../constant/Colors';
 import { TypeList, WhenToTake } from '../constant/Options';
+import { FormatDate, formatDateForText, formDateForText } from '../service/ConvertDateTime';
 
 export default function AddMedForm() {
     const [formData, setFormData] = useState({});
     const [showStartDate, setShowStartDate] = useState(false);
+    const [showEndDate, setShowEndDate] = useState(false);
 
     const onHandleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const showDatePicker = useCallback(() => {
-        InteractionManager.runAfterInteractions(() => {
-            setShowStartDate(true);
-        });
-    }, []);
-
-    const onDateChange = useCallback((event, selectedDate) => {
-        setShowStartDate(false);
-        if (selectedDate) {
-            onHandleInputChange('startDate', selectedDate.toISOString().split('T')[0]);
-        }
-    }, []);
+    
 
     return (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <View contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
                 <Text style={styles.header}>{ConstantString.AddNewMediciation}</Text>
 
@@ -97,32 +88,47 @@ export default function AddMedForm() {
 
                 {/* Start and End Date */}
                 <View style={styles.dateGroup}>
-                    <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={showDatePicker}>
+                    <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={()=>setShowStartDate(true)}>
                         <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
                         <Text style={styles.inputDate}>
-                            {formData?.startDate ?? 'Start Date'}
+                            { formatDateForText (formData?.startDate) ?? 'Start Date'}
                         </Text>
                     </TouchableOpacity>
 
-                    {showStartDate && (
+                    {showStartDate && 
                         <RNDateTimePicker
-                            mode="date"
-                            display="spinner"
                             minimumDate={new Date()}
-                            onChange={onDateChange}
-                            value={formData.startDate ? new Date(formData.startDate) : new Date()}
+                           
+                            onChange={(event)=>{
+                                onHandleInputChange('startDate', FormatDate(event.nativeEvent.timestamp));
+                                setShowStartDate(false)
+                            }
+                        }
+                           value={new Date (formData?.startDate)??new Date()}
                         />
-                    )}
+                    }
 
-                    <View style={[styles.input, { flex: 1 }]}>
+                    <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={()=>setShowEndDate(true)}>
                         <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
                         <Text style={styles.inputDate}>
-                            {formData?.endDate ?? 'End Date'}
+                            { formatDateForText(formData?.endDate) ?? 'End Date'}
                         </Text>
-                    </View>
+                    </TouchableOpacity>
+                    {showEndDate && 
+                        <RNDateTimePicker
+                            minimumDate={new Date()}
+                           
+                            onChange={(event)=>{
+                                onHandleInputChange('endDate', FormatDate(event.nativeEvent.timestamp));
+                                setShowEndDate(false)
+                            }
+                        }
+                           value={new Date (formData?.endDate)??new Date()}
+                        />
+                    }
                 </View>
             </View>
-        </ScrollView>
+        </View>
     );
 }
 
@@ -181,7 +187,7 @@ const styles = StyleSheet.create({
         height: 56,
     },
     inputDate: {
-        fontSize: 16,
+        fontSize: 13,
         padding: 5,
         flex: 1,
         marginLeft: 10,
