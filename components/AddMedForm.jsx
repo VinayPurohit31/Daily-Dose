@@ -6,129 +6,152 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
-import { InteractionManager } from 'react-native';
-
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ConstantString from '../constant/ConstantString';
 import Colors from '../constant/Colors';
 import { TypeList, WhenToTake } from '../constant/Options';
-import { FormatDate, formatDateForText, formDateForText } from '../service/ConvertDateTime';
+import { convertToTime, FormatDate, formatDateForText, formDateForText } from '../service/ConvertDateTime';
 
 export default function AddMedForm() {
     const [formData, setFormData] = useState({});
     const [showStartDate, setShowStartDate] = useState(false);
     const [showEndDate, setShowEndDate] = useState(false);
+    const [showTimePicker,setShowTimePicker]=useState(false)
 
     const onHandleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    
+
 
     return (
-        <View contentContainerStyle={styles.scrollContainer}>
-            <View style={styles.container}>
-                <Text style={styles.header}>{ConstantString.AddNewMediciation}</Text>
 
-                {/* Medication Name Input */}
-                <View style={styles.input}>
-                    <AntDesign style={styles.icon} name="medicinebox" size={24} color="black" />
-                    <TextInput
-                        style={styles.textInput}
-                        placeholder="Medication Name"
-                        onChangeText={(value) => onHandleInputChange('name', value)}
-                    />
-                </View>
+        <View style={styles.container}>
+            <Text style={styles.header}>{ConstantString.AddNewMediciation}</Text>
 
-                {/* Type List */}
-                <FlatList
-                    data={TypeList}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.name}
-                    keyboardShouldPersistTaps="handled"
-                    contentContainerStyle={styles.typeListContainer}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            onPress={() => onHandleInputChange('type', item.name)}
-                            style={[
-                                styles.inputGroupStyle,
-                                { backgroundColor: formData?.type === item.name ? Colors.PRIMARY : Colors.WHITE }
-                            ]}
-                        >
-                            <Text style={[styles.typeText, { color: formData?.type === item.name ? 'white' : 'black' }]}>
-                                {item.name}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
+            {/* Medication Name Input */}
+            <View style={styles.input}>
+                <AntDesign style={styles.icon} name="medicinebox" size={24} color="black" />
+                <TextInput
+                    style={styles.textInput}
+                    placeholder="Medication Name"
+                    onChangeText={(value) => onHandleInputChange('name', value)}
                 />
-
-                {/* Dosage Input */}
-                <View style={styles.input}>
-                    <Ionicons style={styles.icon} name="eyedrop-outline" size={24} color="black" />
-                    <TextInput
-                        style={styles.textInput}
-                        placeholder="Dose (e.g., 2, 5ml)"
-                        onChangeText={(value) => onHandleInputChange('dose', value)}
-                    />
-                </View>
-
-                {/* When to Take DropDown */}
-                <View style={styles.input}>
-                    <Feather style={styles.icon} name="clock" size={24} color="black" />
-                    <Picker
-                        selectedValue={formData.when}
-                        onValueChange={(itemValue) => onHandleInputChange('when', itemValue)}
-                        style={styles.picker}
-                    >
-                        {WhenToTake.map((item, index) => (
-                            <Picker.Item key={index} label={item} value={item} />
-                        ))}
-                    </Picker>
-                </View>
-
-                {/* Start and End Date */}
-                <View style={styles.dateGroup}>
-                    <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={()=>setShowStartDate(true)}>
-                        <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
-                        <Text style={styles.inputDate}>
-                            { formatDateForText (formData?.startDate) ?? 'Start Date'}
-                        </Text>
-                    </TouchableOpacity>
-
-                    {showStartDate && 
-                        <RNDateTimePicker
-                            minimumDate={new Date()}
-                           
-                            onChange={(event)=>{
-                                onHandleInputChange('startDate', FormatDate(event.nativeEvent.timestamp));
-                                setShowStartDate(false)
-                            }
-                        }
-                           value={new Date (formData?.startDate)??new Date()}
-                        />
-                    }
-
-                    <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={()=>setShowEndDate(true)}>
-                        <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
-                        <Text style={styles.inputDate}>
-                            { formatDateForText(formData?.endDate) ?? 'End Date'}
-                        </Text>
-                    </TouchableOpacity>
-                    {showEndDate && 
-                        <RNDateTimePicker
-                            minimumDate={new Date()}
-                           
-                            onChange={(event)=>{
-                                onHandleInputChange('endDate', FormatDate(event.nativeEvent.timestamp));
-                                setShowEndDate(false)
-                            }
-                        }
-                           value={new Date (formData?.endDate)??new Date()}
-                        />
-                    }
-                </View>
             </View>
+
+            {/* Type List */}
+            <FlatList
+                data={TypeList}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.name}
+                keyboardShouldPersistTaps="handled"
+                contentContainerStyle={styles.typeListContainer}
+                renderItem={({ item }) => (
+                    <TouchableOpacity
+                        onPress={() => onHandleInputChange('type', item.name)}
+                        style={[
+                            styles.inputGroupStyle,
+                            { backgroundColor: formData?.type === item.name ? Colors.PRIMARY : Colors.WHITE }
+                        ]}
+                    >
+                        <Text style={[styles.typeText, { color: formData?.type === item.name ? 'white' : 'black' }]}>
+                            {item.name}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            />
+
+            {/* Dosage Input */}
+            <View style={styles.input}>
+                <Ionicons style={styles.icon} name="eyedrop-outline" size={24} color="black" />
+                <TextInput
+                    style={styles.textInput}
+                    placeholder="Dose (e.g., 2, 5ml)"
+                    onChangeText={(value) => onHandleInputChange('dose', value)}
+                />
+            </View>
+
+            {/* When to Take DropDown */}
+            <View style={styles.input}>
+                <Feather style={styles.icon} name="clock" size={24} color="black" />
+                <Picker
+                    selectedValue={formData.when}
+                    onValueChange={(itemValue) => onHandleInputChange('when', itemValue)}
+                    style={styles.picker}
+                >
+                    {WhenToTake.map((item, index) => (
+                        <Picker.Item key={index} label={item} value={item} />
+                    ))}
+                </Picker>
+            </View>
+
+            {/* Start and End Date */}
+            <View style={styles.dateGroup}>
+                <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowStartDate(true)}>
+                    <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
+                    <Text style={styles.inputDate}>
+                        {formatDateForText(formData?.startDate) ?? 'Start Date'}
+                    </Text>
+                </TouchableOpacity>
+
+                {showStartDate &&
+                    <RNDateTimePicker
+                        minimumDate={new Date()}
+
+                        onChange={(event) => {
+                            onHandleInputChange('startDate', FormatDate(event.nativeEvent.timestamp));
+                            setShowStartDate(false)
+                        }
+                        }
+                        value={new Date(formData?.startDate) ?? new Date()}
+                    />
+                }
+
+                <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowEndDate(true)}>
+                    <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
+                    <Text style={styles.inputDate}>
+                        {formatDateForText(formData?.endDate) ?? 'End Date'}
+                    </Text>
+                </TouchableOpacity>
+                {showEndDate &&
+                    <RNDateTimePicker
+                        minimumDate={new Date()}
+
+                        onChange={(event) => {
+                            onHandleInputChange('endDate', FormatDate(event.nativeEvent.timestamp));
+                            setShowEndDate(false)
+                        }
+                        }
+                        value={new Date(formData?.endDate) ?? new Date()}
+                    />
+                }
+            </View>
+
+            {/* Set Reminder Input */}
+            <View style={styles.dateGroup}>
+                <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowTimePicker(true)}>
+                <MaterialCommunityIcons style={styles.icon} name="timer-cog-outline" size={24} color="black" />
+                    <Text style={styles.inputDate}>
+                       {formData?.reminder?? 'Select Time Reminder '}
+                    </Text>
+                </TouchableOpacity>
+                </View>
+               { showTimePicker&& <RNDateTimePicker
+                mode='time'
+                onChange={(event) => {
+                    onHandleInputChange('reminder',convertToTime(event.nativeEvent.timestamp))
+                    setShowTimePicker(false)
+                }
+                }
+                value={formData?.reminder??new Date()}
+
+                />
+               }
+
+
         </View>
+
     );
 }
 
