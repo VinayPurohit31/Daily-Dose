@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ScrollView, Alert } from 'react-native';
 import React, { useState, useCallback } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -11,18 +11,42 @@ import ConstantString from '../constant/ConstantString';
 import Colors from '../constant/Colors';
 import { TypeList, WhenToTake } from '../constant/Options';
 import { convertToTime, FormatDate, formatDateForText, formDateForText } from '../service/ConvertDateTime';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../config/FireBaseConfig';
+import { getLocalStorage } from '../service/Storage';
 
 export default function AddMedForm() {
     const [formData, setFormData] = useState({});
     const [showStartDate, setShowStartDate] = useState(false);
     const [showEndDate, setShowEndDate] = useState(false);
-    const [showTimePicker,setShowTimePicker]=useState(false)
+    const [showTimePicker, setShowTimePicker] = useState(false)
 
     const onHandleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
+    const SaveMedication = async () => {
+        const docId = Date.now().toString();
+        const user = await getLocalStorage('userDetail');
+        
+        // **Check if required fields are filled**
+        if (!(formData?.name && formData?.type && formData?.dose && formData?.startDate && formData?.endDate && formData?.reminder)) {
+            Alert.alert("Missing Fields", "Please fill in all the required fields.");
+            return;
+        }
 
+        try {
+            await setDoc(doc(db, 'medication', docId), {
+                ...formData,
+                userEmail: user?.email,
+                docId: docId
+            });
+            Alert.alert("Success", "Medication added successfully!");
+        } catch (e) {
+            console.log(e);
+            Alert.alert("Error", "Failed to add medication. Please try again.");
+        }
+    };
 
     return (
 
@@ -131,23 +155,27 @@ export default function AddMedForm() {
             {/* Set Reminder Input */}
             <View style={styles.dateGroup}>
                 <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowTimePicker(true)}>
-                <MaterialCommunityIcons style={styles.icon} name="timer-cog-outline" size={24} color="black" />
+                    <MaterialCommunityIcons style={styles.icon} name="timer-cog-outline" size={24} color="black" />
                     <Text style={styles.inputDate}>
-                       {formData?.reminder?? 'Select Time Reminder '}
+                        {formData?.reminder ?? 'Select Time Reminder '}
                     </Text>
                 </TouchableOpacity>
-                </View>
-               { showTimePicker&& <RNDateTimePicker
+            </View>
+            {showTimePicker && <RNDateTimePicker
                 mode='time'
                 onChange={(event) => {
-                    onHandleInputChange('reminder',convertToTime(event.nativeEvent.timestamp))
+                    onHandleInputChange('reminder', convertToTime(event.nativeEvent.timestamp))
                     setShowTimePicker(false)
                 }
                 }
-                value={formData?.reminder??new Date()}
+                value={formData?.reminder ?? new Date()}
 
-                />
-               }
+            />
+            }
+
+            <TouchableOpacity style={styles.buttonE} onPress={SaveMedication} >
+                <Text style={styles.buttonTextL}>Add Medication </Text>
+            </TouchableOpacity>
 
 
         </View>
@@ -218,6 +246,23 @@ const styles = StyleSheet.create({
     dateGroup: {
         flexDirection: 'row',
         gap: 10,
+    },
+    buttonE: {
+        paddingVertical: 15,
+        borderRadius: 10,
+        marginTop: 10,
+        alignItems: 'center',
+        backgroundColor: Colors.PRIMARY,
+        shadowColor: Colors.PRIMARY,
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: 0.4,
+        shadowRadius: 10,
+        elevation: 5,
+    },
+    buttonTextL: {
+        fontSize: 18,
+        color: 'white',
+        fontWeight: 'bold',
     },
 });
 

@@ -8,6 +8,7 @@ const AddMedicationScreen = () => {
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
       <AddMedHeader />
       <AddMedForm />
+      
     </ScrollView>
   );
 };
