@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
@@ -10,25 +11,38 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ConstantString from '../constant/ConstantString';
 import Colors from '../constant/Colors';
 import { TypeList, WhenToTake } from '../constant/Options';
-import { convertToTime, FormatDate, formatDateForText } from '../service/ConvertDateTime';
+import { convertToTime, formatDateForText, getDatesRange } from '../service/ConvertDateTime';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../config/FireBaseConfig';
 import { getLocalStorage } from '../service/Storage';
-import { router, useRouter } from 'expo-router';
-import { ActivityIndicator } from 'react-native';
-
+import { useRouter } from 'expo-router';
 
 export default function AddMedForm() {
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState({ reminder: [] });
     const [showStartDate, setShowStartDate] = useState(false);
     const [showEndDate, setShowEndDate] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
-    const [loading, setLoadiang] = useState(false);
-
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
 
     const onHandleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const addReminderTime = (selectedTime) => {
+        if (selectedTime) {
+            setFormData(prev => ({
+                ...prev,
+                reminder: [...prev.reminder, convertToTime(selectedTime)]
+            }));
+        }
+    };
+
+    const removeReminderTime = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            reminder: prev.reminder.filter((_, i) => i !== index)
+        }));
     };
 
     const SaveMedication = async () => {
@@ -36,24 +50,26 @@ export default function AddMedForm() {
         const user = await getLocalStorage('userDetail');
 
         // Check if all required fields are filled
-        if (!(formData?.name && formData?.type && formData?.dose && formData?.startDate && formData?.endDate && formData?.reminder)) {
+        if (!(formData?.illnessName && formData?.medName && formData?.type && formData?.dose && formData?.startDate && formData?.endDate && formData?.reminder.length)) {
             Alert.alert("Missing Fields", "Please fill in all the required fields.");
             return;
         }
-        setLoadiang(true);
+        const dates=getDatesRange(formData?.startDate,formData.endDate);
+        console.log(dates);
+        setLoading(true);
         try {
             await setDoc(doc(db, 'medication', docId), {
                 ...formData,
                 userEmail: user?.email,
-                docId: docId
+                docId: docId,
+                dates:dates
             });
-            setLoadiang(false);
+            setLoading(false);
             Alert.alert("Success", "Medication added successfully!", [
                 { text: 'Ok', onPress: () => router.push('(tabs)') }
             ]);
-
         } catch (e) {
-            setLoadiang(false);
+            setLoading(false);
             console.log(e);
             Alert.alert("Error", "Something went wrong. Please try again.");
         }
@@ -63,13 +79,23 @@ export default function AddMedForm() {
         <View style={styles.container}>
             <Text style={styles.header}>{ConstantString.AddNewMediciation}</Text>
 
+            {/* Illness Name */}
+            <View style={styles.input}>
+                <MaterialCommunityIcons style={styles.icon} name="virus-outline" size={24} color="black" />
+                <TextInput
+                    style={styles.textInput}
+                    placeholder="Illness Name"
+                    onChangeText={(value) => onHandleInputChange('illnessName', value)}
+                />
+            </View>
+
             {/* Medication Name */}
             <View style={styles.input}>
                 <AntDesign style={styles.icon} name="medicinebox" size={24} color="black" />
                 <TextInput
                     style={styles.textInput}
                     placeholder="Medication Name"
-                    onChangeText={(value) => onHandleInputChange('name', value)}
+                    onChangeText={(value) => onHandleInputChange('medName', value)}
                 />
             </View>
 
@@ -167,26 +193,31 @@ export default function AddMedForm() {
                 )}
             </View>
 
-            {/* Reminder Time */}
-            <View style={styles.dateGroup}>
-                <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowTimePicker(true)}>
-                    <MaterialCommunityIcons style={styles.icon} name="timer-cog-outline" size={24} color="black" />
-                    <Text style={styles.inputDate}>
-                        {formData?.reminder ?? 'Select Reminder Time'}
-                    </Text>
-                </TouchableOpacity>
+            {/* Reminder Times */}
+            <Text style={styles.subHeader}>Reminder Times</Text>
+            <View>
+                {formData.reminder.map((time, index) => (
+                    <View key={index} style={styles.reminderRow}>
+                        <Text style={styles.reminderText}>{time}</Text>
+                        <TouchableOpacity onPress={() => removeReminderTime(index)}>
+                            <MaterialIcons name="cancel" size={20} color="red" />
+                        </TouchableOpacity>
+                    </View>
+                ))}
             </View>
+            <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
+                <Entypo style={styles.icon} name="stopwatch" size={24} color="black" />
+                <Text style={styles.buttonText}>+ Add Reminder</Text>
+            </TouchableOpacity>
 
             {showTimePicker && (
                 <RNDateTimePicker
                     mode="time"
                     onChange={(event, selectedTime) => {
                         setShowTimePicker(false);
-                        if (selectedTime) {
-                            onHandleInputChange('reminder', convertToTime(selectedTime));
-                        }
+                        addReminderTime(selectedTime);
                     }}
-                    value={formData?.reminder ? new Date(`1970-01-01T${formData.reminder}Z`) : new Date()}
+                    value={new Date()}
                 />
             )}
 
@@ -198,8 +229,6 @@ export default function AddMedForm() {
                     <Text style={styles.buttonTextL}>Add Medication</Text>
                 )}
             </TouchableOpacity>
-
-
         </View>
     );
 }
@@ -285,5 +314,14 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
+    reminderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderWidth: 1, borderRadius: 8, marginBottom: 10, borderColor:Colors.DARK_GRAY},
+
+    reminderText: { fontSize: 16, },
+
+   
+    buttonText: { color: 'black', fontSize: 16 },
+
+   
+
 });
 
