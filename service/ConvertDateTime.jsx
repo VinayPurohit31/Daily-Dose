@@ -29,3 +29,16 @@ export const getDatesRange=(startdate,endDate)=>{
 
 
 }
+
+export const GetDateRangeToDisplay=()=>{
+    const dateList=[];
+    for(let i=0;i<=7;i++){
+        dateList.push({
+            date:moment().add(i,'days').format('DD'),
+            day:moment().add(i,'days').format('dd'),
+            formatedDate:moment().add(i,'days').format('L')
+        })
+        
+    }
+    return dateList;
+}
