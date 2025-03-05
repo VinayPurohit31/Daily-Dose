@@ -4,6 +4,7 @@ import { Tabs, useRouter } from 'expo-router';
 import Entypo from '@expo/vector-icons/Entypo';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { getLocalStorage } from '../../service/Storage';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 
 export default function TabLayout() {
@@ -40,6 +41,15 @@ export default function TabLayout() {
                     tabBarLabel: 'Add New',
                     tabBarIcon: ({ color, size }) => (
                         <AntDesign name="plussquare" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tabs.Screen 
+                name='Report'
+                options={{
+                    tabBarLabel: 'Reports', // Fixed typo here
+                    tabBarIcon: ({ color, size }) => (
+                        <FontAwesome5 name="sticky-note" size={24} color={color} />
                     ),
                 }}
             />

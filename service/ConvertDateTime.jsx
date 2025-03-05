@@ -36,7 +36,7 @@ export const GetDateRangeToDisplay=()=>{
         dateList.push({
             date:moment().add(i,'days').format('DD'),
             day:moment().add(i,'days').format('dd'),
-            formatedDate:moment().add(i,'days').format('L')
+            formattedDate:moment().add(i,'days').format('L')
         })
         
     }
