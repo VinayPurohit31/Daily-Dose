@@ -20,30 +20,23 @@ const MedicationList = () => {
 
     const GetDateRangeList = () => {
         const range = GetDateRangeToDisplay();
-                    console.log("BSDK:"+medList)
-
         setDateRange(range);
     };
 
     const GetMedicationList = async (selectedDate) => {
         const user = await getLocalStorage('userDetail');
         if (!user?.email) return;
-        
+
         try {
             const q = query(
                 collection(db, 'medication'),
                 where('userEmail', '==', user.email),
                 where('dates', 'array-contains', selectedDate)
-                
             );
-            console.log(user.email)
-                console.log(selectedDate)
 
             const querySnapshot = await getDocs(q);
-            console.log(querySnapshot)
             let tempList = [];
             querySnapshot.forEach((doc) => {
-                console.log("docId: " + doc.id + ' ==> ', doc.data());
                 tempList.push(doc.data());
             });
             setMedList(tempList);
@@ -56,36 +49,40 @@ const MedicationList = () => {
         <View style={styles.container}>
             <Image style={styles.imageStyle} source={require('../assets/images/medical_illustration.jpeg')} />
 
-            <FlatList
-                style={styles.flatList}
-                data={dateRange}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                renderItem={({ item }) => (
-                    <TouchableOpacity 
-                        style={[
-                            styles.listDateGroup, 
-                            { backgroundColor: item.formattedDate === selectedDate ? Colors.PRIMARY : Colors.LIGHT_GRAY_BORDER }
-                        ]}
-                        onPress={() => setSelectedDate(item.formattedDate)}
-                    >
-                        <Text style={[styles.day, { color: item.formattedDate === selectedDate ? 'white' : 'black' }]}>
-                            {item.day}
-                        </Text>
-                        <Text style={[styles.date, { color: item.formattedDate === selectedDate ? 'white' : 'black' }]}>
-                            {item.date}
-                        </Text>
-                    </TouchableOpacity>
-                )}
-            />
+            {/* Date Range List with Fixed Height */}
+            <View style={styles.dateRangeContainer}>
+                <FlatList
+                    data={dateRange}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={[
+                                styles.listDateGroup,
+                                { backgroundColor: item.formattedDate === selectedDate ? Colors.PRIMARY : Colors.LIGHT_GRAY_BORDER }
+                            ]}
+                            onPress={() => setSelectedDate(item.formattedDate)}
+                        >
+                            <Text style={[styles.day, { color: item.formattedDate === selectedDate ? 'white' : 'black' }]}>
+                                {item.day}
+                            </Text>
+                            <Text style={[styles.date, { color: item.formattedDate === selectedDate ? 'white' : 'black' }]}>
+                                {item.date}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                />
+            </View>
 
-
-            <FlatList
-                data={medList}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => <MedicationCardItem medicine={item} />}
-                
-            />
+            {/* Scrollable Medication List with Fixed Height */}
+            <View style={styles.medListContainer}>
+                <FlatList
+                    data={medList}
+                    keyExtractor={(item, index) => index.toString()}
+                    renderItem={({ item }) => <MedicationCardItem medicine={item} />}
+                    showsVerticalScrollIndicator={false}
+                />
+            </View>
         </View>
     );
 };
@@ -95,19 +92,20 @@ export default MedicationList;
 const styles = StyleSheet.create({
     container: {
         marginTop: 25,
+        flex: 1,
     },
     imageStyle: {
         width: '100%',
         height: 200,
         borderRadius: 15,
     },
-    flatList: {
+    dateRangeContainer: {
+        height: 100, // ✅ Fixes the issue (Adjust height as needed)
         marginTop: 15,
     },
     listDateGroup: {
         padding: 10,
         backgroundColor: Colors.LIGHT_GRAY_BORDER,
-        display: 'flex',
         alignItems: 'center',
         marginRight: 10,
         borderRadius: 15,
@@ -118,5 +116,9 @@ const styles = StyleSheet.create({
     date: {
         fontSize: 26,
         fontWeight: 'bold',
+    },
+    medListContainer: {
+        flex: 1,
+        maxHeight: 400, // ✅ Fixes expanding issue (Adjust if needed)
     },
 });

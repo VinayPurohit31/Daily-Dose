@@ -10,7 +10,6 @@ export function MedicationCardItem({ medicine }) {
                     style={styles.image}
                 />
                 <View style={styles.textContainer}>
-                    
                     <Text style={styles.textName}>{medicine?.medName}</Text>
                     <Text style={styles.textWhen}>Illness Name: {medicine?.illnessName}</Text>
                     <Text style={styles.textWhen}>{medicine?.when}</Text>
@@ -20,7 +19,11 @@ export function MedicationCardItem({ medicine }) {
 
             {/* Scrollable Reminder Section */}
             <View style={styles.reminderContainer}>
-                <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                <ScrollView 
+                    style={styles.scrollView} 
+                    showsVerticalScrollIndicator={true} // ✅ Enable scrollbar
+                    nestedScrollEnabled={true} // ✅ Allows scrolling inside a nested ScrollView
+                >
                     {medicine?.reminder?.map((time, index) => (
                         <View key={index} style={styles.reminderPill}>
                             <Text style={styles.reminderText}>{time}</Text>
@@ -35,7 +38,7 @@ export function MedicationCardItem({ medicine }) {
 const styles = StyleSheet.create({
     container: {
         padding: 15,
-        backgroundColor: Colors.LIGHT_PRIMARY,
+        backgroundColor: Colors.BACKGROUND,
         marginVertical: 8,
         borderRadius: 20,
         flexDirection: 'row',
@@ -77,8 +80,8 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     reminderContainer: {
-        width: 120,  // Set a fixed width for the reminder section
-        height: 80, // Fixed height so it doesn’t expand
+        width: 120,
+        maxHeight: 80, // ✅ Allows it to expand only when needed
         backgroundColor: 'white',
         borderRadius: 15,
         paddingHorizontal: 10,
@@ -89,7 +92,7 @@ const styles = StyleSheet.create({
         elevation: 3,
     },
     scrollView: {
-        flex: 1,
+        flex: 1, // ✅ Enables scrolling inside the fixed-height container
     },
     reminderPill: {
         backgroundColor: Colors.PRIMARY,
