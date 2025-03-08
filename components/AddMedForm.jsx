@@ -101,26 +101,25 @@ export default function AddMedForm() {
 
             {/* Type Selection */}
             <FlatList
-                data={TypeList}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                keyExtractor={(item) => item.name}
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={styles.typeListContainer}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        onPress={() => onHandleInputChange('type', item.name)}
-                        style={[
-                            styles.inputGroupStyle,
-                            { backgroundColor: formData?.type === item.name ? Colors.PRIMARY : Colors.WHITE }
-                        ]}
-                    >
-                        <Text style={[styles.typeText, { color: formData?.type === item.name ? 'white' : 'black' }]}>
-                            {item.name}
-                        </Text>
-                    </TouchableOpacity>
-                )}
-            />
+    data={TypeList}
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    style={styles.typeListContainer}
+    renderItem={({ item }) => (
+        <TouchableOpacity
+            onPress={() => onHandleInputChange('type', item)}
+            style={[
+                styles.inputGroupStyle,
+                { backgroundColor: formData?.type === item ? Colors.PRIMARY : 'white' }
+            ]}
+        >
+            <Text style={[styles.typeText, { color: formData?.type === item ? 'white' : 'black' }]}>
+                {item.name}
+            </Text>
+        </TouchableOpacity>
+    )}
+/>
+
 
             {/* Dosage Input */}
             <View style={styles.input}>

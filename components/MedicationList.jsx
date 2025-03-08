@@ -20,21 +20,27 @@ const MedicationList = () => {
 
     const GetDateRangeList = () => {
         const range = GetDateRangeToDisplay();
+                    console.log("BSDK:"+medList)
+
         setDateRange(range);
     };
 
     const GetMedicationList = async (selectedDate) => {
         const user = await getLocalStorage('userDetail');
         if (!user?.email) return;
-
+        
         try {
             const q = query(
                 collection(db, 'medication'),
                 where('userEmail', '==', user.email),
                 where('dates', 'array-contains', selectedDate)
+                
             );
+            console.log(user.email)
+                console.log(selectedDate)
 
             const querySnapshot = await getDocs(q);
+            console.log(querySnapshot)
             let tempList = [];
             querySnapshot.forEach((doc) => {
                 console.log("docId: " + doc.id + ' ==> ', doc.data());
@@ -48,7 +54,7 @@ const MedicationList = () => {
 
     return (
         <View style={styles.container}>
-            <Image style={styles.imageStyle} source={require('../assets/images/medication.jpeg')} />
+            <Image style={styles.imageStyle} source={require('../assets/images/medical_illustration.jpeg')} />
 
             <FlatList
                 style={styles.flatList}
@@ -73,10 +79,12 @@ const MedicationList = () => {
                 )}
             />
 
+
             <FlatList
                 data={medList}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => <MedicationCardItem medicine={item} />}
+                
             />
         </View>
     );

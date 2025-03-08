@@ -1,24 +1,32 @@
-import { View, Text, StyleSheet, Image } from 'react-native';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
 import Colors from '../constant/Colors';
 
 export function MedicationCardItem({ medicine }) {
     return (
         <View style={styles.container}>
             <View style={styles.subContainer}>
-                <Image 
-                    source={{ uri: medicine?.type?.icon }} 
-                    style={styles.image} 
+                <Image
+                    source={{ uri: medicine?.type?.icon }}
+                    style={styles.image}
                 />
-                <View>
-                    <Text style={styles.textName}>{medicine?.name}</Text>
+                <View style={styles.textContainer}>
+                    
+                    <Text style={styles.textName}>{medicine?.medName}</Text>
+                    <Text style={styles.textWhen}>Illness Name: {medicine?.illnessName}</Text>
                     <Text style={styles.textWhen}>{medicine?.when}</Text>
                     <Text style={styles.textDose}>{medicine?.dose} {medicine?.type?.name}</Text>
                 </View>
             </View>
+
+            {/* Scrollable Reminder Section */}
             <View style={styles.reminderContainer}>
-                <FontAwesome5 name="clock" size={24} color="black" />
-                <Text>{medicine?.reminder}</Text>
+                <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                    {medicine?.reminder?.map((time, index) => (
+                        <View key={index} style={styles.reminderPill}>
+                            <Text style={styles.reminderText}>{time}</Text>
+                        </View>
+                    ))}
+                </ScrollView>
             </View>
         </View>
     );
@@ -26,37 +34,74 @@ export function MedicationCardItem({ medicine }) {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 10,
+        padding: 15,
         backgroundColor: Colors.LIGHT_PRIMARY,
-        marginTop: 10,
-        borderRadius: 15,
+        marginVertical: 8,
+        borderRadius: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 5,
     },
     subContainer: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     image: {
-        width: 40,
-        height: 40,
+        width: 50,
+        height: 50,
+        borderRadius: 10,
+        marginRight: 12,
+    },
+    textContainer: {
+        justifyContent: 'center',
     },
     textName: {
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: 'bold',
+        color: '#333',
     },
     textWhen: {
         fontSize: 14,
+        color: '#666',
+        marginTop: 2,
     },
     textDose: {
-        color: 'black',
+        fontSize: 14,
+        color: Colors.PRIMARY,
+        fontWeight: '600',
+        marginTop: 2,
     },
     reminderContainer: {
-        padding: 15,
+        width: 120,  // Set a fixed width for the reminder section
+        height: 80, // Fixed height so it doesn’t expand
         backgroundColor: 'white',
         borderRadius: 15,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        shadowColor: '#000',
+        shadowOpacity: 0.1,
+        shadowRadius: 5,
+        elevation: 3,
+    },
+    scrollView: {
+        flex: 1,
+    },
+    reminderPill: {
+        backgroundColor: Colors.PRIMARY,
+        paddingVertical: 5,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        marginBottom: 5,
         alignItems: 'center',
+    },
+    reminderText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: 'white',
     },
 });
