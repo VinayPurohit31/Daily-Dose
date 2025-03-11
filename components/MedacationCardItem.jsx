@@ -1,5 +1,7 @@
-import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, Dimensions } from 'react-native';
 import Colors from '../constant/Colors';
+
+const SCREEN_WIDTH = Dimensions.get('window').width; // Get screen width for dynamic sizing
 
 export function MedicationCardItem({ medicine }) {
     return (
@@ -11,25 +13,31 @@ export function MedicationCardItem({ medicine }) {
                 />
                 <View style={styles.textContainer}>
                     <Text style={styles.textName}>{medicine?.medName}</Text>
-                    <Text style={styles.textWhen}>Illness Name: {medicine?.illnessName}</Text>
+                    <Text style={styles.textWhen}>{medicine?.illnessName}</Text>
                     <Text style={styles.textWhen}>{medicine?.when}</Text>
                     <Text style={styles.textDose}>{medicine?.dose} {medicine?.type?.name}</Text>
                 </View>
             </View>
 
-            {/* Scrollable Reminder Section */}
-            <View style={styles.reminderContainer}>
-                <ScrollView 
-                    style={styles.scrollView} 
-                    showsVerticalScrollIndicator={true} // ✅ Enable scrollbar
-                    nestedScrollEnabled={true} // ✅ Allows scrolling inside a nested ScrollView
-                >
-                    {medicine?.reminder?.map((time, index) => (
-                        <View key={index} style={styles.reminderPill}>
-                            <Text style={styles.reminderText}>{time}</Text>
-                        </View>
-                    ))}
-                </ScrollView>
+            {/* Reminder Section with Info Text */}
+            <View style={styles.reminderWrapper}>
+                <Text style={styles.reminderInfo}>Scroll for</Text>
+                <Text style={styles.reminderInfo}>all reminders →</Text>
+                <View style={styles.reminderContainer}>
+                    <ScrollView 
+                        horizontal={true} 
+                        pagingEnabled={true} // ✅ Scrolls one reminder at a time
+                        showsHorizontalScrollIndicator={false} 
+                        nestedScrollEnabled={true} 
+                        contentContainerStyle={styles.scrollViewContent}
+                    >
+                        {medicine?.reminder?.map((time, index) => (
+                            <View key={index} style={styles.reminderPill}>
+                                <Text style={styles.reminderText}>{time}</Text>
+                            </View>
+                        ))}
+                    </ScrollView>
+                </View>
             </View>
         </View>
     );
@@ -79,28 +87,37 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginTop: 2,
     },
+    reminderWrapper: {
+        alignItems: 'center',
+    },
+    reminderInfo: {
+        fontSize: 12,
+        color: '#888',
+        marginBottom: 3,
+    },
     reminderContainer: {
-        width: 120,
-        maxHeight: 80, // ✅ Allows it to expand only when needed
+        width: 120, // ✅ Fixed width to show only one reminder at a time
+        height: 50, // ✅ Fixed height to keep pills inside
         backgroundColor: 'white',
         borderRadius: 15,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
+        overflow: 'hidden', // ✅ Prevents content from going out of border
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 3,
     },
-    scrollView: {
-        flex: 1, // ✅ Enables scrolling inside the fixed-height container
+    scrollViewContent: {
+        alignItems: 'center', // ✅ Centers the pills properly
+        padding: 10
     },
     reminderPill: {
+        width: 94.9, // ✅ Matches container width to fit one item
+        height: 35, 
+        marginHorizontal: 5,
         backgroundColor: Colors.PRIMARY,
-        paddingVertical: 5,
-        paddingHorizontal: 12,
-        borderRadius: 12,
-        marginBottom: 5,
+        justifyContent: 'center',
         alignItems: 'center',
+        borderRadius: 12,
     },
     reminderText: {
         fontSize: 14,
