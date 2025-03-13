@@ -30,8 +30,8 @@ const MedicationList = () => {
     };
 
     const GetMedicationList = async (selectedDate) => {
-        setLoading(true); // ✅ Show loader before fetching
-        setMedList([]); // ✅ Clear previous data to avoid lag
+        setLoading(true);
+        setMedList([]); 
 
         const user = await getLocalStorage('userDetail');
         if (!user?.email) return;
@@ -50,7 +50,7 @@ const MedicationList = () => {
         } catch (e) {
             console.log(e);
         } finally {
-            setLoading(false); // ✅ Hide loader once data is fetched
+            setLoading(false);
         }
     };
 
@@ -128,6 +128,7 @@ const styles = StyleSheet.create({
     dateRangeContainer: {
         height: 100, 
         marginTop: 15,
+        marginBottom:15
     },
     listDateGroup: {
         padding: 10,
@@ -144,8 +145,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     scrollContainer: {
-        flexGrow: 1, // ✅ Ensures scrolling works properly
-        paddingBottom: 20, // ✅ Prevents content from cutting off at the bottom
+        flexGrow: 1, 
+        paddingBottom: 20,
     },
     medListContainer: {
         flex: 1,
