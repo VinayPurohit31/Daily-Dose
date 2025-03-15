@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Picker } from '@react-native-picker/picker';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -12,18 +12,28 @@ import ConstantString from '../constant/ConstantString';
 import Colors from '../constant/Colors';
 import { TypeList, WhenToTake } from '../constant/Options';
 import { convertToTime, formatDateForText, getDatesRange } from '../service/ConvertDateTime';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../config/FireBaseConfig';
 import { getLocalStorage } from '../service/Storage';
 import { useRouter } from 'expo-router';
 
 export default function AddMedForm() {
-    const [formData, setFormData] = useState({ reminder: [] });
+    const [formData, setFormData] = useState({ reminder: [], illnessName: '' });
     const [showStartDate, setShowStartDate] = useState(false);
     const [showEndDate, setShowEndDate] = useState(false);
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [illnessList, setIllnessList] = useState([]);
+    const [showIllnessInput, setShowIllnessInput] = useState(false); // State to toggle between Picker and TextInput
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchIllnesses = async () => {
+            const querySnapshot = await getDocs(collection(db, 'illnesses'));
+            setIllnessList(querySnapshot.docs.map(doc => doc.id));
+        };
+        fetchIllnesses();
+    }, []);
 
     const onHandleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -49,21 +59,26 @@ export default function AddMedForm() {
         const docId = Date.now().toString();
         const user = await getLocalStorage('userDetail');
 
-        // Check if all required fields are filled
         if (!(formData?.illnessName && formData?.medName && formData?.type && formData?.dose && formData?.startDate && formData?.endDate && formData?.reminder.length)) {
             Alert.alert("Missing Fields", "Please fill in all the required fields.");
             return;
         }
-        const dates=getDatesRange(formData?.startDate,formData.endDate);
-        console.log(dates);
+
+        const dates = getDatesRange(formData?.startDate, formData.endDate);
         setLoading(true);
+
         try {
             await setDoc(doc(db, 'medication', docId), {
                 ...formData,
                 userEmail: user?.email,
                 docId: docId,
-                dates:dates
+                dates: dates
             });
+
+            if (!illnessList.includes(formData.illnessName)) {
+                await setDoc(doc(db, 'illnesses', formData.illnessName), {});
+            }
+
             setLoading(false);
             Alert.alert("Success", "Medication added successfully!", [
                 { text: 'Ok', onPress: () => router.push('(tabs)') }
@@ -82,11 +97,36 @@ export default function AddMedForm() {
             {/* Illness Name */}
             <View style={styles.input}>
                 <MaterialCommunityIcons style={styles.icon} name="virus-outline" size={24} color="black" />
-                <TextInput
-                    style={styles.textInput}
-                    placeholder="Illness Name"
-                    onChangeText={(value) => onHandleInputChange('illnessName', value)}
-                />
+                {showIllnessInput ? (
+                    // Show TextInput if user wants to enter a new illness
+                    <TextInput
+                        style={styles.textInput}
+                        placeholder="Enter Illness Name"
+                        value={formData.illnessName}
+                        onChangeText={(value) => onHandleInputChange('illnessName', value)}
+                    />
+                ) : (
+                    // Show Picker if user wants to select an existing illness
+                    <Picker
+                        selectedValue={formData.illnessName}
+                        onValueChange={(value) => {
+                            if (value === "new") {
+                                // If "Enter New Illness" is selected, show the TextInput
+                                setShowIllnessInput(true);
+                                onHandleInputChange('illnessName', '');
+                            } else {
+                                onHandleInputChange('illnessName', value);
+                            }
+                        }}
+                        style={styles.picker}
+                    >
+                        <Picker.Item label="Select Illness or Enter New" value="" />
+                        {illnessList.map((illness, index) => (
+                            <Picker.Item key={index} label={illness} value={illness} />
+                        ))}
+                        <Picker.Item label="Enter New Illness" value="new" />
+                    </Picker>
+                )}
             </View>
 
             {/* Medication Name */}
@@ -101,25 +141,24 @@ export default function AddMedForm() {
 
             {/* Type Selection */}
             <FlatList
-    data={TypeList}
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    style={styles.typeListContainer}
-    renderItem={({ item }) => (
-        <TouchableOpacity
-            onPress={() => onHandleInputChange('type', item)}
-            style={[
-                styles.inputGroupStyle,
-                { backgroundColor: formData?.type === item ? Colors.PRIMARY : 'white' }
-            ]}
-        >
-            <Text style={[styles.typeText, { color: formData?.type === item ? 'white' : 'black' }]}>
-                {item.name}
-            </Text>
-        </TouchableOpacity>
-    )}
-/>
-
+                data={TypeList}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.typeListContainer}
+                renderItem={({ item }) => (
+                    <TouchableOpacity
+                        onPress={() => onHandleInputChange('type', item)}
+                        style={[
+                            styles.inputGroupStyle,
+                            { backgroundColor: formData?.type === item ? Colors.PRIMARY : 'white' }
+                        ]}
+                    >
+                        <Text style={[styles.typeText, { color: formData?.type === item ? 'white' : 'black' }]}>
+                            {item.name}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            />
 
             {/* Dosage Input */}
             <View style={styles.input}>
@@ -233,10 +272,6 @@ export default function AddMedForm() {
 }
 
 const styles = StyleSheet.create({
-    scrollContainer: {
-        flexGrow: 1,
-        paddingBottom: 20, // Prevents content from getting cut off
-    },
     container: {
         flex: 1,
         padding: 20,
@@ -267,6 +302,10 @@ const styles = StyleSheet.create({
         paddingRight: 15,
         borderColor: Colors.GRAY,
     },
+    picker: {
+        flex: 1,
+        height: 56,
+    },
     typeListContainer: {
         paddingVertical: 10,
         marginBottom: 20,
@@ -281,10 +320,6 @@ const styles = StyleSheet.create({
     },
     typeText: {
         fontSize: 14,
-    },
-    picker: {
-        flex: 1,
-        height: 56,
     },
     inputDate: {
         fontSize: 13,
@@ -313,14 +348,21 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
     },
-    reminderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderWidth: 1, borderRadius: 8, marginBottom: 10, borderColor:Colors.DARK_GRAY},
-
-    reminderText: { fontSize: 16, },
-
-   
-    buttonText: { color: 'black', fontSize: 16 },
-
-   
-
+    reminderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        borderWidth: 1,
+        borderRadius: 8,
+        marginBottom: 10,
+        borderColor: Colors.DARK_GRAY,
+    },
+    reminderText: {
+        fontSize: 16,
+    },
+    buttonText: {
+        color: 'black',
+        fontSize: 16,
+    },
 });
-
