@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, Image, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, Dimensions,TouchableOpacity } from 'react-native';
 import Colors from '../constant/Colors';
+import { MaterialIcons } from '@expo/vector-icons';
+const SCREEN_WIDTH = Dimensions.get('window').width; 
 
-const SCREEN_WIDTH = Dimensions.get('window').width; // Get screen width for dynamic sizing
-
-export function MedicationCardItem({ medicine }) {
+export function MedicationCardItem({ medicine,onDelete }) {
     return (
         <View style={styles.container}>
             <View style={styles.subContainer}>
@@ -26,7 +26,7 @@ export function MedicationCardItem({ medicine }) {
                 <View style={styles.reminderContainer}>
                     <ScrollView 
                         horizontal={true} 
-                        pagingEnabled={true} // ✅ Scrolls one reminder at a time
+                        pagingEnabled={true} 
                         showsHorizontalScrollIndicator={false} 
                         nestedScrollEnabled={true} 
                         contentContainerStyle={styles.scrollViewContent}
@@ -39,7 +39,15 @@ export function MedicationCardItem({ medicine }) {
                     </ScrollView>
                 </View>
             </View>
+            
+
+            {/* Delete Button */}
+            <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
+                <MaterialIcons name="delete" size={24} color="red" />
+            </TouchableOpacity>
+       
         </View>
+        
     );
 }
 
@@ -72,7 +80,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     textName: {
-        fontSize: 20,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
     },
@@ -96,22 +104,22 @@ const styles = StyleSheet.create({
         marginBottom: 3,
     },
     reminderContainer: {
-        width: 120, // ✅ Fixed width to show only one reminder at a time
-        height: 50, // ✅ Fixed height to keep pills inside
+        width: 110, 
+        height: 41, 
         backgroundColor: 'white',
         borderRadius: 15,
-        overflow: 'hidden', // ✅ Prevents content from going out of border
+        overflow: 'hidden', 
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 3,
     },
     scrollViewContent: {
-        alignItems: 'center', // ✅ Centers the pills properly
-        padding: 10
+        alignItems: 'flex-start', 
+        padding: 2.9
     },
     reminderPill: {
-        width: 94.9, // ✅ Matches container width to fit one item
+        width: 94.9, 
         height: 35, 
         marginHorizontal: 5,
         backgroundColor: Colors.PRIMARY,
