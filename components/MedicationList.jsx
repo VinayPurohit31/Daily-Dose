@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, ActivityIndicator, ScrollView, Alert } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
+import { useRouter } from 'expo-router';
 import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/FireBaseConfig';
 import { getLocalStorage } from '../service/Storage';
@@ -14,6 +15,7 @@ const MedicationList = () => {
     const [dateRange, setDateRange] = useState([]);
     const [selectedDate, setSelectedDate] = useState(moment().format('MM/DD/YYYY'));
     const [loading, setLoading] = useState(false);
+    const router = useRouter(); 
 
     useEffect(() => {
         GetDateRangeList();
@@ -120,10 +122,14 @@ const MedicationList = () => {
                             data={medList}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
+                                
                                 <MedicationCardItem
                                     medicine={item}
-                                    onDelete={() => handleDeleteMedication(item.id)} // Pass delete handler
+                                    onDelete={() => handleDeleteMedication(item.id)}
+                                    selectedDate={selectedDate} // Pass delete handler
                                 />
+                              
+
                             )}
                             showsVerticalScrollIndicator={false}
                         />

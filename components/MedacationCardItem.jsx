@@ -1,9 +1,13 @@
-import { View, Text, StyleSheet, Image, ScrollView, Dimensions,TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import Colors from '../constant/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
-const SCREEN_WIDTH = Dimensions.get('window').width; 
+import { useRouter } from 'expo-router'; // Import the router
 
-export function MedicationCardItem({ medicine,onDelete }) {
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+export function MedicationCardItem({ medicine, onDelete, selectedDate }) {
+    const router = useRouter(); // Initialize the router
+
     return (
         <View style={styles.container}>
             <View style={styles.subContainer}>
@@ -21,14 +25,12 @@ export function MedicationCardItem({ medicine,onDelete }) {
 
             {/* Reminder Section with Info Text */}
             <View style={styles.reminderWrapper}>
-                <Text style={styles.reminderInfo}>Scroll for</Text>
-                <Text style={styles.reminderInfo}>all reminders →</Text>
                 <View style={styles.reminderContainer}>
-                    <ScrollView 
-                        horizontal={true} 
-                        pagingEnabled={true} 
-                        showsHorizontalScrollIndicator={false} 
-                        nestedScrollEnabled={true} 
+                    <ScrollView
+                        horizontal={true}
+                        pagingEnabled={true}
+                        showsHorizontalScrollIndicator={false}
+                        nestedScrollEnabled={true}
                         contentContainerStyle={styles.scrollViewContent}
                     >
                         {medicine?.reminder?.map((time, index) => (
@@ -38,16 +40,28 @@ export function MedicationCardItem({ medicine,onDelete }) {
                         ))}
                     </ScrollView>
                 </View>
+
+                {/* Button to navigate to the action model */}
+                <TouchableOpacity 
+                    style={styles.actionButton} 
+                    onPress={() => router.push({
+                        pathname: 'action-model',
+                        params: { 
+                            ...medicine, // Pass the entire medicine object
+                            selectedDate: selectedDate // Pass the selected date
+                        }
+                    })}
+                >
+                    <Text style={styles.actionButtonText}>Take Med</Text>
+                </TouchableOpacity>
             </View>
-            
 
             {/* Delete Button */}
             <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
                 <MaterialIcons name="delete" size={24} color="red" />
+                <Text style={{ color: 'red', fontSize: 10, fontWeight: '200' }}>Delete</Text>
             </TouchableOpacity>
-       
         </View>
-        
     );
 }
 
@@ -98,29 +112,24 @@ const styles = StyleSheet.create({
     reminderWrapper: {
         alignItems: 'center',
     },
-    reminderInfo: {
-        fontSize: 12,
-        color: '#888',
-        marginBottom: 3,
-    },
     reminderContainer: {
-        width: 110, 
-        height: 41, 
+        width: 110,
+        height: 41,
         backgroundColor: 'white',
         borderRadius: 15,
-        overflow: 'hidden', 
+        overflow: 'hidden',
         shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowRadius: 5,
         elevation: 3,
     },
     scrollViewContent: {
-        alignItems: 'flex-start', 
+        alignItems: 'flex-start',
         padding: 2.9
     },
     reminderPill: {
-        width: 94.9, 
-        height: 35, 
+        width: 94.9,
+        height: 35,
         marginHorizontal: 5,
         backgroundColor: Colors.PRIMARY,
         justifyContent: 'center',
@@ -131,5 +140,22 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         color: 'white',
+    },
+    actionButton: {
+        width: 94.9, // Match the width of the reminder pill
+        height: 35, // Match the height of the reminder pill
+        backgroundColor: Colors.PRIMARY, // Match the background color
+        justifyContent: 'center', // Center the text vertically
+        alignItems: 'center', // Center the text horizontally
+        borderRadius: 12, // Match the border radius
+        marginTop: 10, // Add some margin at the top
+    },
+    actionButtonText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: 'white', // Match the text color
+    },
+    deleteButton: {
+        alignItems: 'center',
     },
 });
