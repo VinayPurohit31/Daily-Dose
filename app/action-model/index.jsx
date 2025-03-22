@@ -2,8 +2,9 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Colors from '../../constant/Colors';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function MedicationActionModel() {
   const medicine = useLocalSearchParams();
@@ -33,7 +34,12 @@ export default function MedicationActionModel() {
         </TouchableOpacity>
       </View>
 
-      <Image source={require('./../../assets/images/notification.gif')} style={styles.image} />
+      {/* <Image  style={styles.image} /> */}
+      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+        <FontAwesome name="bell-o" size={140} style={styles.image} />
+        {/* <Feather name="bell" size={140} style={styles.image} /> */}
+      </View>
+
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Medication Details</Text>
@@ -86,15 +92,24 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   backButton: { padding: 10 },
   headerTitle: { fontSize: 28, fontWeight: 'bold', color: Colors.PRIMARY, flex: 1, textAlign: 'center' },
-  image: { width: 150, height: 150, alignSelf: 'center', marginBottom: 20, borderRadius: 10 },
-  card: { backgroundColor: Colors.WHITE, borderRadius: 15, padding: 25, marginBottom: 20,borderColor: Colors.LIGHT_GRAY_BORDER, borderWidth: 3 },
+  image: {
+    width: 160,
+    height: 160,
+    alignSelf: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderRadius: 15,
+    color: Colors.PRIMARY,
+  },
+  card: { backgroundColor: Colors.BACKGROUND, borderRadius: 15, padding: 25, marginBottom: 20, borderColor: Colors.LIGHT_GRAY_BORDER, borderWidth: 3 },
   cardTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.PRIMARY, marginBottom: 15, textAlign: 'center' },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   detailLabel: { fontSize: 18, fontWeight: '600', color: Colors.DARK },
   detailValue: { fontSize: 18, color: Colors.SECONDARY, fontWeight: '500' },
   actionText: { fontSize: 22, fontWeight: 'bold', color: Colors.PRIMARY, marginBottom: 10, textAlign: 'center' },
-  pickerContainer: { width: '100%', backgroundColor: Colors.WHITE, borderRadius: 12, marginBottom: 20, borderWidth: 3, borderColor: Colors.LIGHT_GRAY_BORDER, paddingHorizontal: 15 },
-  picker: { width: '100%', height: 55,},
+  pickerContainer: { width: '100%', backgroundColor: Colors.BACKGROUND, borderRadius: 12, marginBottom: 20, borderWidth: 3, borderColor: Colors.LIGHT_GRAY_BORDER, paddingHorizontal: 15 },
+  picker: { width: '100%', height: 55, },
   noReminderText: { fontSize: 18, color: Colors.GRAY, textAlign: 'center', marginBottom: 20 },
   buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 20 },
   button: { flex: 1, paddingVertical: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginHorizontal: 10, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
