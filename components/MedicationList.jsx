@@ -15,7 +15,7 @@ const MedicationList = () => {
     const [dateRange, setDateRange] = useState([]);
     const [selectedDate, setSelectedDate] = useState(moment().format('MM/DD/YYYY'));
     const [loading, setLoading] = useState(false);
-    const router = useRouter(); 
+    const router = useRouter();
 
     useEffect(() => {
         GetDateRangeList();
@@ -45,7 +45,7 @@ const MedicationList = () => {
             );
 
             const querySnapshot = await getDocs(q);
-            let tempList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); // Include document ID
+            let tempList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setMedList(tempList);
         } catch (e) {
             console.log(e);
@@ -55,7 +55,6 @@ const MedicationList = () => {
     };
 
     const handleDeleteMedication = async (medId) => {
-        // Confirmation dialog
         Alert.alert(
             "Delete Medication",
             "Are you sure you want to delete this medication permanently?",
@@ -68,8 +67,8 @@ const MedicationList = () => {
                     text: "Delete",
                     onPress: async () => {
                         try {
-                            await deleteDoc(doc(db, 'medication', medId)); // Delete from Firestore
-                            setMedList(prev => prev.filter(med => med.id !== medId)); // Update local state
+                            await deleteDoc(doc(db, 'medication', medId));
+                            setMedList(prev => prev.filter(med => med.id !== medId));
                             Alert.alert("Success", "Medication deleted successfully!");
                         } catch (e) {
                             console.log(e);
@@ -122,14 +121,11 @@ const MedicationList = () => {
                             data={medList}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
-                                
                                 <MedicationCardItem
                                     medicine={item}
                                     onDelete={() => handleDeleteMedication(item.id)}
-                                    selectedDate={selectedDate} // Pass delete handler
+                                    selectedDate={selectedDate}
                                 />
-                              
-
                             )}
                             showsVerticalScrollIndicator={false}
                         />
@@ -146,7 +142,7 @@ export default MedicationList;
 
 const styles = StyleSheet.create({
     container: {
-        marginTop: 25,
+        marginTop: 10,
         flex: 1,
     },
     imageStyle: {
@@ -156,7 +152,7 @@ const styles = StyleSheet.create({
     },
     dateRangeContainer: {
         height: 100,
-        marginTop: 15,
+        marginTop: 10,
         marginBottom: 15,
     },
     listDateGroup: {
@@ -175,7 +171,7 @@ const styles = StyleSheet.create({
     },
     scrollContainer: {
         flexGrow: 1,
-        paddingBottom: 20,
+        paddingBottom: 10,
     },
     medListContainer: {
         flex: 1,
@@ -183,7 +179,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     loader: {
-        marginTop: 20,
+        marginTop: 10,
         alignSelf: 'center',
     },
 });

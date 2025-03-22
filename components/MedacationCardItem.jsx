@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import Colors from '../constant/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router'; // Import the router
+import { useRouter } from 'expo-router';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export function MedicationCardItem({ medicine, onDelete, selectedDate }) {
-    const router = useRouter(); // Initialize the router
+    const router = useRouter();
 
     return (
         <View style={styles.container}>
@@ -23,7 +23,7 @@ export function MedicationCardItem({ medicine, onDelete, selectedDate }) {
                 </View>
             </View>
 
-            {/* Reminder Section with Info Text */}
+            {/* Reminder Section */}
             <View style={styles.reminderWrapper}>
                 <View style={styles.reminderContainer}>
                     <ScrollView
@@ -42,14 +42,15 @@ export function MedicationCardItem({ medicine, onDelete, selectedDate }) {
                 </View>
 
                 {/* Button to navigate to the action model */}
-                <TouchableOpacity 
-                    style={styles.actionButton} 
+                <TouchableOpacity
+                    style={styles.actionButton}
                     onPress={() => router.push({
                         pathname: 'action-model',
-                        params: { 
-                            ...medicine, // Pass the entire medicine object
-                            selectedDate: selectedDate // Pass the selected date
-                        }
+                        params: {
+                            ...medicine,
+                            selectedDate: selectedDate,
+                            reminders: JSON.stringify(medicine.reminder), // Pass reminders as a stringified array
+                        },
                     })}
                 >
                     <Text style={styles.actionButtonText}>Take Med</Text>
@@ -73,7 +74,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '100%',
+        width: '99%',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOpacity: 0.1,
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
     },
     scrollViewContent: {
         alignItems: 'flex-start',
-        padding: 2.9
+        padding: 2.9,
     },
     reminderPill: {
         width: 94.9,
@@ -142,18 +143,18 @@ const styles = StyleSheet.create({
         color: 'white',
     },
     actionButton: {
-        width: 94.9, // Match the width of the reminder pill
-        height: 35, // Match the height of the reminder pill
-        backgroundColor: Colors.PRIMARY, // Match the background color
-        justifyContent: 'center', // Center the text vertically
-        alignItems: 'center', // Center the text horizontally
-        borderRadius: 12, // Match the border radius
-        marginTop: 10, // Add some margin at the top
+        width: 94.9,
+        height: 35,
+        backgroundColor: Colors.PRIMARY,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 12,
+        marginTop: 10,
     },
     actionButtonText: {
         fontSize: 14,
         fontWeight: '500',
-        color: 'white', // Match the text color
+        color: 'white',
     },
     deleteButton: {
         alignItems: 'center',

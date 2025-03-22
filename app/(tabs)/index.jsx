@@ -9,12 +9,12 @@ import AddMedForm from '../../components/AddMedForm';
 
 export default function HomeScreen() {
     return (
-        <View style={{padding: 25,backgroundColor: 'white',height: '100%'}}>
+        <View style={{padding: 15,backgroundColor: 'white',height: '100%'}}>
             <Header />
 
             <MedicationList/>
 
-            {/* <EmptyState/> */}
+           
             
         </View>
     );
