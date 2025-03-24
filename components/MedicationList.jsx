@@ -2,7 +2,8 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, ActivityIndi
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { useRouter } from 'expo-router';
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc, getDoc  } from 'firebase/firestore';
+
 import { db } from '../config/FireBaseConfig';
 import { getLocalStorage } from '../service/Storage';
 import { GetDateRangeToDisplay } from '../service/ConvertDateTime';
@@ -46,7 +47,44 @@ const MedicationList = () => {
 
             const querySnapshot = await getDocs(q);
             let tempList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setMedList(tempList);
+
+            // Fetch status for each medication
+            const medListWithStatus = await Promise.all(
+                tempList.map(async (med) => {
+                    const statusDocRef = doc(db, 'medications', `${med.id}_${selectedDate}`);
+                    const statusDocSnap = await getDoc(statusDocRef); // Correct usage of getDoc
+
+                    if (statusDocSnap.exists()) {
+                        const data = statusDocSnap.data();
+                        const takenReminders = data.takenReminders || [];
+                        const missedReminders = data.missedReminders || [];
+                        const totalReminders = med.reminder.length;
+                        const takenPercentage = (takenReminders.length / totalReminders) * 100;
+
+                        return {
+                            ...med,
+                            status: {
+                                takenPercentage,
+                                isFullyTaken: takenReminders.length === totalReminders,
+                                isPartiallyTaken: takenReminders.length > 0 && takenReminders.length < totalReminders,
+                                isNotTaken: takenReminders.length === 0,
+                            },
+                        };
+                    } else {
+                        return {
+                            ...med,
+                            status: {
+                                takenPercentage: 0,
+                                isFullyTaken: false,
+                                isPartiallyTaken: false,
+                                isNotTaken: true,
+                            },
+                        };
+                    }
+                })
+            );
+
+            setMedList(medListWithStatus);
         } catch (e) {
             console.log(e);
         } finally {
@@ -67,7 +105,7 @@ const MedicationList = () => {
                     text: "Delete",
                     onPress: async () => {
                         try {
-                            await deleteDoc(doc(db, 'medication', medId));
+                            await deleteDoc(doc(db, 'medication', medId)); // Correct usage of deleteDoc
                             setMedList(prev => prev.filter(med => med.id !== medId));
                             Alert.alert("Success", "Medication deleted successfully!");
                         } catch (e) {
@@ -125,6 +163,7 @@ const MedicationList = () => {
                                     medicine={item}
                                     onDelete={() => handleDeleteMedication(item.id)}
                                     selectedDate={selectedDate}
+                                    status={item.status} // Pass status to the card
                                 />
                             )}
                             showsVerticalScrollIndicator={false}

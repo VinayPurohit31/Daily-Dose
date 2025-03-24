@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-export function MedicationCardItem({ medicine, onDelete, selectedDate }) {
+export function MedicationCardItem({ medicine, onDelete, selectedDate, status }) {
     const router = useRouter();
 
     return (
@@ -20,6 +20,21 @@ export function MedicationCardItem({ medicine, onDelete, selectedDate }) {
                     <Text style={styles.textWhen}>{medicine?.illnessName}</Text>
                     <Text style={styles.textWhen}>{medicine?.when}</Text>
                     <Text style={styles.textDose}>{medicine?.dose} {medicine?.type?.name}</Text>
+                </View>
+            </View>
+
+            {/* Status Indicator */}
+            <View style={styles.statusContainer}>
+                <Text style={styles.statusText}>
+                    {status.isFullyTaken ? 'Completed' : status.isPartiallyTaken ? 'In Progress' : 'Not Taken'}
+                </Text>
+                <View style={styles.progressBar}>
+                    <View
+                        style={[
+                            styles.progressFill,
+                            { width: `${status.takenPercentage}%` },
+                        ]}
+                    />
                 </View>
             </View>
 
@@ -49,7 +64,7 @@ export function MedicationCardItem({ medicine, onDelete, selectedDate }) {
                         params: {
                             ...medicine,
                             selectedDate: selectedDate,
-                            reminders: JSON.stringify(medicine.reminder), // Pass reminders as a stringified array
+                            reminders: JSON.stringify(medicine.reminder),
                         },
                     })}
                 >
@@ -109,6 +124,28 @@ const styles = StyleSheet.create({
         color: Colors.PRIMARY,
         fontWeight: '600',
         marginTop: 2,
+    },
+    statusContainer: {
+        alignItems: 'center',
+        marginVertical: 10,
+    },
+    statusText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: Colors.PRIMARY,
+    },
+    progressBar: {
+        width: 100,
+        height: 8,
+        backgroundColor: Colors.LIGHT_GRAY_BORDER,
+        borderRadius: 4,
+        marginTop: 5,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: Colors.PRIMARY,
+        borderRadius: 4,
     },
     reminderWrapper: {
         alignItems: 'center',

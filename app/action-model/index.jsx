@@ -1,10 +1,12 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Colors from '../../constant/Colors';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { db } from '../../config/FireBaseConfig';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 
 export default function MedicationActionModel() {
   const medicine = useLocalSearchParams();
@@ -14,17 +16,72 @@ export default function MedicationActionModel() {
 
   const [selectedTime, setSelectedTime] = useState('');
   const [reminderTimes, setReminderTimes] = useState([]);
+  const [takenReminders, setTakenReminders] = useState(new Set());
+  const [missedReminders, setMissedReminders] = useState(new Set());
 
   useEffect(() => {
     if (reminders && Array.isArray(reminders)) {
       setReminderTimes(reminders);
-      setSelectedTime(reminders.length > 0 ? reminders[0] : '');
+      if (!selectedTime && reminders.length > 0) {
+        setSelectedTime(reminders[0]);
+      }
     }
-  }, [reminders]);
+    fetchTakenStatus();
+  }, [medicine]);
 
-  const handleCancel = () => { };
-  const handleTaken = () => { };
-  const handleBack = () => { router.back(); };
+  const fetchTakenStatus = async () => {
+
+    const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      setTakenReminders(new Set(data.takenReminders || []));
+      setMissedReminders(new Set(data.missedReminders || []));
+    }
+  };
+
+  const handleTaken = async () => {
+    if (selectedTime) {
+      const updatedTakenReminders = new Set([...takenReminders, selectedTime]);
+      setTakenReminders(updatedTakenReminders);
+      setMissedReminders((prev) => new Set([...prev].filter((time) => time !== selectedTime)));
+
+      const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
+      await setDoc(docRef, {
+        takenReminders: Array.from(updatedTakenReminders),
+        missedReminders: Array.from(missedReminders),
+      }, { merge: true });
+    }
+  };
+
+  const handleMissed = async () => {
+    if (selectedTime) {
+      const updatedMissedReminders = new Set([...missedReminders, selectedTime]);
+      setMissedReminders(updatedMissedReminders);
+      setTakenReminders((prev) => new Set([...prev].filter((time) => time !== selectedTime)));
+
+      const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
+      await setDoc(docRef, {
+        missedReminders: Array.from(updatedMissedReminders),
+        takenReminders: Array.from(takenReminders),
+      }, { merge: true });
+    }
+  };
+
+  const handleCancel = async () => {
+    if (selectedTime && takenReminders.has(selectedTime)) {
+      const updatedTakenReminders = new Set(takenReminders);
+      updatedTakenReminders.delete(selectedTime);
+      setTakenReminders(updatedTakenReminders);
+      const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
+      await updateDoc(docRef, { takenReminders: Array.from(updatedTakenReminders) });
+    }
+  };
+
+  const handleBack = () => {
+    router.back();
+  };
 
   return (
     <View style={styles.container}>
@@ -32,17 +89,14 @@ export default function MedicationActionModel() {
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={28} color={Colors.PRIMARY} />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>Medication Details</Text>
       </View>
 
-      {/* <Image  style={styles.image} /> */}
-      <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <FontAwesome name="bell-o" size={140} style={styles.image} />
-        {/* <Feather name="bell" size={140} style={styles.image} /> */}
+      <View style={styles.imageContainer}>
+        <FontAwesome name="bell-o" size={120} color={Colors.PRIMARY} />
       </View>
-
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Medication Details</Text>
         {[
           { label: 'Date', value: medicine?.selectedDate },
           { label: 'Illness', value: medicine?.illnessName },
@@ -58,8 +112,8 @@ export default function MedicationActionModel() {
       </View>
 
       <Text style={styles.actionText}>Select Reminder Time</Text>
-      {reminderTimes.length > 0 ? (
-        <View style={styles.pickerContainer}>
+      <View style={styles.pickerContainer}>
+        {reminderTimes.length > 0 ? (
           <Picker
             selectedValue={selectedTime}
             onValueChange={(itemValue) => setSelectedTime(itemValue)}
@@ -67,19 +121,52 @@ export default function MedicationActionModel() {
             dropdownIconColor={Colors.PRIMARY}
           >
             {reminderTimes.map((time, index) => (
-              <Picker.Item key={index} label={time} value={time} />
+              <Picker.Item
+                key={index}
+                label={`${time} ${takenReminders.has(time) ? '✔️' : missedReminders.has(time) ? '❌' : ''}`}
+                value={time}
+              />
             ))}
           </Picker>
-        </View>
-      ) : (
-        <Text style={styles.noReminderText}>No reminders set for this medication.</Text>
-      )}
+        ) : (
+          <Text style={styles.noReminderText}>No reminders set for this medication.</Text>
+        )}
+      </View>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleCancel}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.cancelButton,
+            (takenReminders.size + missedReminders.size === reminderTimes.length) && styles.disabledButton,
+          ]}
+          onPress={handleCancel}
+          disabled={takenReminders.size + missedReminders.size === reminderTimes.length}
+        >
           <Text style={styles.buttonText}>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.takenButton]} onPress={handleTaken}>
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.missedButton,
+            (takenReminders.size + missedReminders.size === reminderTimes.length) && styles.disabledButton,
+          ]}
+          onPress={handleMissed}
+          disabled={takenReminders.size + missedReminders.size === reminderTimes.length || missedReminders.has(selectedTime)}
+        >
+          <Text style={styles.buttonText}>Missed</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.takenButton,
+            (takenReminders.size + missedReminders.size === reminderTimes.length) && styles.disabledButton,
+          ]}
+          onPress={handleTaken}
+          disabled={takenReminders.size + missedReminders.size === reminderTimes.length || takenReminders.has(selectedTime)}
+        >
           <Text style={styles.buttonText}>Taken</Text>
         </TouchableOpacity>
       </View>
@@ -91,29 +178,54 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: Colors.LIGHT_BACKGROUND },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
   backButton: { padding: 10 },
-  headerTitle: { fontSize: 28, fontWeight: 'bold', color: Colors.PRIMARY, flex: 1, textAlign: 'center' },
-  image: {
-    width: 160,
-    height: 160,
-    alignSelf: 'center',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-    borderRadius: 15,
-    color: Colors.PRIMARY,
-  },
-  card: { backgroundColor: Colors.BACKGROUND, borderRadius: 15, padding: 25, marginBottom: 20, borderColor: Colors.LIGHT_GRAY_BORDER, borderWidth: 3 },
-  cardTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.PRIMARY, marginBottom: 15, textAlign: 'center' },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: Colors.PRIMARY, marginLeft: 10 },
+  imageContainer: { alignItems: 'center', marginBottom: 20 },
+  card: { backgroundColor: Colors.BACKGROUND, borderRadius: 15, padding: 20, marginBottom: 20, elevation: 3 },
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   detailLabel: { fontSize: 18, fontWeight: '600', color: Colors.DARK },
   detailValue: { fontSize: 18, color: Colors.SECONDARY, fontWeight: '500' },
-  actionText: { fontSize: 22, fontWeight: 'bold', color: Colors.PRIMARY, marginBottom: 10, textAlign: 'center' },
-  pickerContainer: { width: '100%', backgroundColor: Colors.BACKGROUND, borderRadius: 12, marginBottom: 20, borderWidth: 3, borderColor: Colors.LIGHT_GRAY_BORDER, paddingHorizontal: 15 },
-  picker: { width: '100%', height: 55, },
+  actionText: { fontSize: 20, fontWeight: 'bold', color: Colors.PRIMARY, marginBottom: 10, textAlign: 'center' },
+  pickerContainer: { backgroundColor: Colors.BACKGROUND, borderRadius: 10, marginBottom: 20, paddingHorizontal: 10, elevation: 2 },
+  picker: { height: 50 },
   noReminderText: { fontSize: 18, color: Colors.GRAY, textAlign: 'center', marginBottom: 20 },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 20 },
-  button: { flex: 1, paddingVertical: 18, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginHorizontal: 10, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4 },
-  cancelButton: { backgroundColor: Colors.GRAY },
-  takenButton: { backgroundColor: Colors.PRIMARY },
-  buttonText: { color: Colors.WHITE, fontSize: 18, fontWeight: 'bold' },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 100,
+    paddingHorizontal: 10,
+  },
+  button: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  cancelButton: {
+    backgroundColor: Colors.DARK_GRAY,
+  },
+  takenButton: {
+    backgroundColor: Colors.PRIMARY,
+  },
+  missedButton: {
+    backgroundColor:'red',
+  },
+  disabledButton: {
+    backgroundColor: Colors.LIGHT_GRAY,
+  },
+  buttonText: {
+    color: Colors.WHITE,
+    fontSize: 16,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
 });
+
