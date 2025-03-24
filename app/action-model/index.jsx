@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Colors from '../../constant/Colors';
@@ -6,81 +6,142 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { db } from '../../config/FireBaseConfig';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { Alert } from 'react-native';
+
+const STATUS = {
+  PENDING: 'pending',
+  TAKEN: 'taken',
+  MISSED: 'missed'
+};
 
 export default function MedicationActionModel() {
   const medicine = useLocalSearchParams();
   const router = useRouter();
 
-  const reminders = useMemo(() => JSON.parse(medicine.reminders || '[]'), [medicine.reminders]);
+  // Safely parse reminders from params
+  const reminders = useMemo(() => {
+    try {
+      // Handle both stringified array and direct array
+      if (typeof medicine.reminders === 'string') {
+        return JSON.parse(medicine.reminders || '[]');
+      } else if (Array.isArray(medicine.reminders)) {
+        return medicine.reminders;
+      }
+      return [];
+    } catch (e) {
+      console.error('Failed to parse reminders:', e);
+      return [];
+    }
+  }, [medicine.reminders]);
 
-  const [selectedTime, setSelectedTime] = useState('');
-  const [reminderTimes, setReminderTimes] = useState([]);
-  const [takenReminders, setTakenReminders] = useState(new Set());
-  const [missedReminders, setMissedReminders] = useState(new Set());
+  const [selectedTime, setSelectedTime] = useState(reminders[0] || '');
+  const [statusMap, setStatusMap] = useState({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (reminders && Array.isArray(reminders)) {
-      setReminderTimes(reminders);
-      if (!selectedTime && reminders.length > 0) {
-        setSelectedTime(reminders[0]);
-      }
+    if (reminders.length > 0 && !selectedTime) {
+      setSelectedTime(reminders[0]);
     }
-    fetchTakenStatus();
-  }, [medicine]);
+    fetchReminderStatus();
+  }, [reminders]);
 
-  const fetchTakenStatus = async () => {
+  const fetchReminderStatus = async () => {
+    if (!medicine.medId || !medicine.selectedDate) {
+      setLoading(false);
+      return;
+    }
 
-    const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
-    const docSnap = await getDoc(docRef);
+    try {
+      setLoading(true);
+      const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
+      const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      setTakenReminders(new Set(data.takenReminders || []));
-      setMissedReminders(new Set(data.missedReminders || []));
+      const initialStatus = {};
+      reminders.forEach(time => {
+        if (docSnap.exists() && docSnap.data()[time]) {
+          initialStatus[time] = docSnap.data()[time];
+        } else {
+          initialStatus[time] = STATUS.PENDING;
+        }
+      });
+      
+      setStatusMap(initialStatus);
+    } catch (error) {
+      console.error("Error fetching reminder status:", error);
+      Alert.alert("Error", "Failed to load medication status");
+      
+      // Initialize all as pending
+      const initialStatus = {};
+      reminders.forEach(time => {
+        initialStatus[time] = STATUS.PENDING;
+      });
+      setStatusMap(initialStatus);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleTaken = async () => {
-    if (selectedTime) {
-      const updatedTakenReminders = new Set([...takenReminders, selectedTime]);
-      setTakenReminders(updatedTakenReminders);
-      setMissedReminders((prev) => new Set([...prev].filter((time) => time !== selectedTime)));
+  const updateReminderStatus = async (status) => {
+    if (!selectedTime || !medicine.medId || !medicine.selectedDate) return;
 
+    try {
+      setLoading(true);
+      // Update local state
+      setStatusMap(prev => ({
+        ...prev,
+        [selectedTime]: status
+      }));
+
+      // Update Firebase
       const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
       await setDoc(docRef, {
-        takenReminders: Array.from(updatedTakenReminders),
-        missedReminders: Array.from(missedReminders),
+        [selectedTime]: status,
+        medId: medicine.medId,
+        date: medicine.selectedDate,
+        medName: medicine.medName,
+        illnessName: medicine.illnessName,
+        dose: medicine.dose,
+        when: medicine.when
       }, { merge: true });
+    } catch (error) {
+      console.error("Error updating status:", error);
+      Alert.alert("Error", "Failed to update medication status");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleMissed = async () => {
-    if (selectedTime) {
-      const updatedMissedReminders = new Set([...missedReminders, selectedTime]);
-      setMissedReminders(updatedMissedReminders);
-      setTakenReminders((prev) => new Set([...prev].filter((time) => time !== selectedTime)));
-
-      const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
-      await setDoc(docRef, {
-        missedReminders: Array.from(updatedMissedReminders),
-        takenReminders: Array.from(takenReminders),
-      }, { merge: true });
-    }
-  };
-
-  const handleCancel = async () => {
-    if (selectedTime && takenReminders.has(selectedTime)) {
-      const updatedTakenReminders = new Set(takenReminders);
-      updatedTakenReminders.delete(selectedTime);
-      setTakenReminders(updatedTakenReminders);
-      const docRef = doc(db, "medications", `${medicine.medId}_${medicine.selectedDate}`);
-      await updateDoc(docRef, { takenReminders: Array.from(updatedTakenReminders) });
-    }
-  };
+  const handleTaken = () => updateReminderStatus(STATUS.TAKEN);
+  const handleMissed = () => updateReminderStatus(STATUS.MISSED);
+  const handleCancel = () => updateReminderStatus(STATUS.PENDING);
 
   const handleBack = () => {
     router.back();
+  };
+
+  const getStatusIcon = (time) => {
+    switch(statusMap[time]) {
+      case STATUS.TAKEN: return '✔️';
+      case STATUS.MISSED: return '❌';
+      default: return '';
+    }
+  };
+
+  const getButtonStyle = (buttonType) => {
+    if (loading) return styles.disabledButton;
+    if (!selectedTime) return styles.disabledButton;
+    
+    switch(buttonType) {
+      case 'cancel':
+        return statusMap[selectedTime] === STATUS.PENDING ? styles.disabledButton : styles.cancelButton;
+      case 'missed':
+        return statusMap[selectedTime] === STATUS.MISSED ? styles.disabledButton : styles.missedButton;
+      case 'taken':
+        return statusMap[selectedTime] === STATUS.TAKEN ? styles.disabledButton : styles.takenButton;
+      default:
+        return styles.disabledButton;
+    }
   };
 
   return (
@@ -98,11 +159,11 @@ export default function MedicationActionModel() {
 
       <View style={styles.card}>
         {[
-          { label: 'Date', value: medicine?.selectedDate },
-          { label: 'Illness', value: medicine?.illnessName },
-          { label: 'Medication', value: medicine?.medName },
-          { label: 'When', value: medicine?.when },
-          { label: 'Dose', value: medicine?.dose }
+          { label: 'Date', value: medicine?.selectedDate || 'N/A' },
+          { label: 'Illness', value: medicine?.illnessName || 'N/A' },
+          { label: 'Medication', value: medicine?.medName || 'N/A' },
+          { label: 'When', value: medicine?.when || 'N/A' },
+          { label: 'Dose', value: medicine?.dose || 'N/A' }
         ].map((item, index) => (
           <View style={styles.detailRow} key={index}>
             <Text style={styles.detailLabel}>{item.label}:</Text>
@@ -113,17 +174,20 @@ export default function MedicationActionModel() {
 
       <Text style={styles.actionText}>Select Reminder Time</Text>
       <View style={styles.pickerContainer}>
-        {reminderTimes.length > 0 ? (
+        {loading && reminders.length === 0 ? (
+          <ActivityIndicator size="small" color={Colors.PRIMARY} />
+        ) : reminders.length > 0 ? (
           <Picker
             selectedValue={selectedTime}
-            onValueChange={(itemValue) => setSelectedTime(itemValue)}
+            onValueChange={setSelectedTime}
             style={styles.picker}
             dropdownIconColor={Colors.PRIMARY}
+            enabled={!loading}
           >
-            {reminderTimes.map((time, index) => (
+            {reminders.map((time, index) => (
               <Picker.Item
                 key={index}
-                label={`${time} ${takenReminders.has(time) ? '✔️' : missedReminders.has(time) ? '❌' : ''}`}
+                label={`${time} ${getStatusIcon(time)}`}
                 value={time}
               />
             ))}
@@ -135,37 +199,25 @@ export default function MedicationActionModel() {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.cancelButton,
-            (takenReminders.size + missedReminders.size === reminderTimes.length) && styles.disabledButton,
-          ]}
+          style={getButtonStyle('cancel')}
           onPress={handleCancel}
-          disabled={takenReminders.size + missedReminders.size === reminderTimes.length}
+          disabled={loading || !selectedTime || statusMap[selectedTime] === STATUS.PENDING}
         >
           <Text style={styles.buttonText}>Cancel</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.missedButton,
-            (takenReminders.size + missedReminders.size === reminderTimes.length) && styles.disabledButton,
-          ]}
+          style={getButtonStyle('missed')}
           onPress={handleMissed}
-          disabled={takenReminders.size + missedReminders.size === reminderTimes.length || missedReminders.has(selectedTime)}
+          disabled={loading || !selectedTime || statusMap[selectedTime] === STATUS.MISSED}
         >
           <Text style={styles.buttonText}>Missed</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.takenButton,
-            (takenReminders.size + missedReminders.size === reminderTimes.length) && styles.disabledButton,
-          ]}
+          style={getButtonStyle('taken')}
           onPress={handleTaken}
-          disabled={takenReminders.size + missedReminders.size === reminderTimes.length || takenReminders.has(selectedTime)}
+          disabled={loading || !selectedTime || statusMap[selectedTime] === STATUS.TAKEN}
         >
           <Text style={styles.buttonText}>Taken</Text>
         </TouchableOpacity>
@@ -175,24 +227,81 @@ export default function MedicationActionModel() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: Colors.LIGHT_BACKGROUND },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  backButton: { padding: 10 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold', color: Colors.PRIMARY, marginLeft: 10 },
-  imageContainer: { alignItems: 'center', marginBottom: 20 },
-  card: { backgroundColor: Colors.BACKGROUND, borderRadius: 15, padding: 20, marginBottom: 20, elevation: 3 },
-  detailRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  detailLabel: { fontSize: 18, fontWeight: '600', color: Colors.DARK },
-  detailValue: { fontSize: 18, color: Colors.SECONDARY, fontWeight: '500' },
-  actionText: { fontSize: 20, fontWeight: 'bold', color: Colors.PRIMARY, marginBottom: 10, textAlign: 'center' },
-  pickerContainer: { backgroundColor: Colors.BACKGROUND, borderRadius: 10, marginBottom: 20, paddingHorizontal: 10, elevation: 2 },
-  picker: { height: 50 },
-  noReminderText: { fontSize: 18, color: Colors.GRAY, textAlign: 'center', marginBottom: 20 },
+  container: { 
+    flex: 1, 
+    padding: 20, 
+    backgroundColor: Colors.LIGHT_BACKGROUND 
+  },
+  header: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  backButton: { 
+    padding: 10 
+  },
+  headerTitle: { 
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    color: Colors.PRIMARY, 
+    marginLeft: 10 
+  },
+  imageContainer: { 
+    alignItems: 'center', 
+    marginBottom: 20 
+  },
+  card: { 
+    backgroundColor: Colors.BACKGROUND, 
+    borderRadius: 15, 
+    padding: 20, 
+    marginBottom: 20, 
+    elevation: 3 
+  },
+  detailRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginBottom: 10 
+  },
+  detailLabel: { 
+    fontSize: 18, 
+    fontWeight: '600', 
+    color: Colors.DARK 
+  },
+  detailValue: { 
+    fontSize: 18, 
+    color: Colors.SECONDARY, 
+    fontWeight: '500' 
+  },
+  actionText: { 
+    fontSize: 20, 
+    fontWeight: 'bold', 
+    color: Colors.PRIMARY, 
+    marginBottom: 10, 
+    textAlign: 'center' 
+  },
+  pickerContainer: { 
+    backgroundColor: Colors.BACKGROUND, 
+    borderRadius: 10, 
+    marginBottom: 20, 
+    paddingHorizontal: 10, 
+    elevation: 2,
+    minHeight: 50,
+    justifyContent: 'center' 
+  },
+  picker: { 
+    height: 50 
+  },
+  noReminderText: { 
+    fontSize: 18, 
+    color: Colors.GRAY, 
+    textAlign: 'center', 
+    marginBottom: 20 
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 100,
+    marginTop: 20,
     paddingHorizontal: 10,
   },
   button: {
@@ -215,7 +324,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.PRIMARY,
   },
   missedButton: {
-    backgroundColor:'red',
+    backgroundColor: Colors.ERROR,
   },
   disabledButton: {
     backgroundColor: Colors.LIGHT_GRAY,
@@ -228,4 +337,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

@@ -2,12 +2,12 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, ActivityIndi
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { useRouter } from 'expo-router';
-import { collection, query, where, getDocs, doc, deleteDoc, getDoc  } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
 
 import { db } from '../config/FireBaseConfig';
 import { getLocalStorage } from '../service/Storage';
 import { GetDateRangeToDisplay } from '../service/ConvertDateTime';
-import { MedicationCardItem } from "../components/MedacationCardItem";
+import MedicationCardItem from "../components/MedacationCardItem";
 import EmptyState from '../components/EmptyState';
 import Colors from '../constant/Colors';
 
@@ -34,59 +34,58 @@ const MedicationList = () => {
     const GetMedicationList = async (selectedDate) => {
         setLoading(true);
         setMedList([]);
-
+      
         const user = await getLocalStorage('userDetail');
         if (!user?.email) return;
-
+      
         try {
             const q = query(
                 collection(db, 'medication'),
                 where('userEmail', '==', user.email),
                 where('dates', 'array-contains', selectedDate)
             );
-
+      
             const querySnapshot = await getDocs(q);
             let tempList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            // Fetch status for each medication
+      
             const medListWithStatus = await Promise.all(
                 tempList.map(async (med) => {
                     const statusDocRef = doc(db, 'medications', `${med.id}_${selectedDate}`);
-                    const statusDocSnap = await getDoc(statusDocRef); // Correct usage of getDoc
-
+                    const statusDocSnap = await getDoc(statusDocRef);
+      
+                    let takenCount = 0;
+                    let missedCount = 0;
+                    const reminders = med.reminder || [];
+      
                     if (statusDocSnap.exists()) {
                         const data = statusDocSnap.data();
-                        const takenReminders = data.takenReminders || [];
-                        const missedReminders = data.missedReminders || [];
-                        const totalReminders = med.reminder.length;
-                        const takenPercentage = (takenReminders.length / totalReminders) * 100;
-
-                        return {
-                            ...med,
-                            status: {
-                                takenPercentage,
-                                isFullyTaken: takenReminders.length === totalReminders,
-                                isPartiallyTaken: takenReminders.length > 0 && takenReminders.length < totalReminders,
-                                isNotTaken: takenReminders.length === 0,
-                            },
-                        };
-                    } else {
-                        return {
-                            ...med,
-                            status: {
-                                takenPercentage: 0,
-                                isFullyTaken: false,
-                                isPartiallyTaken: false,
-                                isNotTaken: true,
-                            },
-                        };
+                        reminders.forEach(time => {
+                            if (data[time] === 'taken') takenCount++;
+                            else if (data[time] === 'missed') missedCount++;
+                        });
                     }
+      
+                    const totalReminders = reminders.length;
+      
+                    return {
+                        ...med,
+                        status: {
+                            takenCount,
+                            missedCount,
+                            totalReminders,
+                            isFullyTaken: takenCount === totalReminders && totalReminders > 0,
+                            isPartiallyTaken: takenCount > 0 && takenCount < totalReminders,
+                            isNotTaken: takenCount === 0 && missedCount === 0,
+                            isFullyMissed: missedCount === totalReminders && totalReminders > 0,
+                        },
+                    };
                 })
             );
-
+      
             setMedList(medListWithStatus);
         } catch (e) {
             console.log(e);
+            Alert.alert("Error", "Failed to load medications. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -105,7 +104,7 @@ const MedicationList = () => {
                     text: "Delete",
                     onPress: async () => {
                         try {
-                            await deleteDoc(doc(db, 'medication', medId)); // Correct usage of deleteDoc
+                            await deleteDoc(doc(db, 'medication', medId));
                             setMedList(prev => prev.filter(med => med.id !== medId));
                             Alert.alert("Success", "Medication deleted successfully!");
                         } catch (e) {
@@ -123,7 +122,6 @@ const MedicationList = () => {
         <View style={styles.container}>
             <Image style={styles.imageStyle} source={require('../assets/images/medical_illustration.jpeg')} />
 
-            {/* Date Range List */}
             <View style={styles.dateRangeContainer}>
                 <FlatList
                     data={dateRange}
@@ -149,7 +147,6 @@ const MedicationList = () => {
                 />
             </View>
 
-            {/* Medication List */}
             <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 <View style={styles.medListContainer}>
                     {loading ? (
@@ -163,7 +160,7 @@ const MedicationList = () => {
                                     medicine={item}
                                     onDelete={() => handleDeleteMedication(item.id)}
                                     selectedDate={selectedDate}
-                                    status={item.status} // Pass status to the card
+                                    status={item.status}
                                 />
                             )}
                             showsVerticalScrollIndicator={false}
@@ -176,13 +173,12 @@ const MedicationList = () => {
         </View>
     );
 };
-
 export default MedicationList;
-
 const styles = StyleSheet.create({
     container: {
         marginTop: 10,
         flex: 1,
+        paddingHorizontal: 15,
     },
     imageStyle: {
         width: '100%',
@@ -191,8 +187,9 @@ const styles = StyleSheet.create({
     },
     dateRangeContainer: {
         height: 100,
+        // width: '100%',
         marginTop: 10,
-        marginBottom: 15,
+        marginBottom: 10,
     },
     listDateGroup: {
         padding: 10,
@@ -200,25 +197,25 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginRight: 10,
         borderRadius: 15,
+        width: 60,
     },
     day: {
-        fontSize: 20,
+        fontSize: 16,
     },
     date: {
-        fontSize: 26,
+        fontSize: 22,
         fontWeight: 'bold',
     },
     scrollContainer: {
         flexGrow: 1,
-        paddingBottom: 10,
+        paddingBottom: 20,
     },
     medListContainer: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     loader: {
-        marginTop: 10,
+        marginTop: 20,
         alignSelf: 'center',
     },
 });
+

@@ -1,51 +1,63 @@
-import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import Colors from '../constant/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
-export function MedicationCardItem({ medicine, onDelete, selectedDate, status }) {
+const MedicationCardItem = ({ medicine, onDelete, selectedDate, status }) => {
     const router = useRouter();
+
+    const getStatusColor = () => {
+        if (status.isFullyTaken) return Colors.SUCCESS;
+        if (status.isFullyMissed) return Colors.ERROR;
+        if (status.isPartiallyTaken) return Colors.WARNING;
+        return Colors.GRAY;
+    };
+
+    const getStatusText = () => {
+        if (status.isFullyTaken) return 'Completed';
+        if (status.isFullyMissed) return 'All Missed';
+        if (status.isPartiallyTaken) return 'In Progress';
+        return 'Not Taken';
+    };
+
+    const handlePress = () => {
+        router.push({
+            pathname: "/action-model",
+            params: {
+                ...medicine,
+                selectedDate: selectedDate,
+                reminders: JSON.stringify(medicine.reminder || []),
+                medId: medicine.id
+            }
+        });
+    };
 
     return (
         <View style={styles.container}>
-            <View style={styles.subContainer}>
+            <TouchableOpacity style={styles.subContainer} onPress={handlePress}>
                 <Image
                     source={{ uri: medicine?.type?.icon }}
                     style={styles.image}
                 />
                 <View style={styles.textContainer}>
-                    <Text style={styles.textName}>{medicine?.medName}</Text>
-                    <Text style={styles.textWhen}>{medicine?.illnessName}</Text>
-                    <Text style={styles.textWhen}>{medicine?.when}</Text>
-                    <Text style={styles.textDose}>{medicine?.dose} {medicine?.type?.name}</Text>
+                    <Text style={styles.textName}>Med: {medicine.medName}</Text>
+                    <Text style={styles.textName}>Illn: {medicine.illnessName}</Text>
+                    <Text style={styles.textDose}>Dose: {medicine.dose}</Text>
+                    <Text style={styles.textDose}>Tupe: {medicine.type.name}</Text>
+                    <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]}>
+                        <Text style={styles.statusText}>{getStatusText()}</Text>
+                        <Text style={styles.statusCount}>
+                            ({status.takenCount}/{status.totalReminders} taken)
+                        </Text>
+                    </View>
                 </View>
-            </View>
+            </TouchableOpacity>
 
-            {/* Status Indicator */}
-            <View style={styles.statusContainer}>
-                <Text style={styles.statusText}>
-                    {status.isFullyTaken ? 'Completed' : status.isPartiallyTaken ? 'In Progress' : 'Not Taken'}
-                </Text>
-                <View style={styles.progressBar}>
-                    <View
-                        style={[
-                            styles.progressFill,
-                            { width: `${status.takenPercentage}%` },
-                        ]}
-                    />
-                </View>
-            </View>
-
-            {/* Reminder Section */}
             <View style={styles.reminderWrapper}>
                 <View style={styles.reminderContainer}>
                     <ScrollView
                         horizontal={true}
-                        pagingEnabled={true}
                         showsHorizontalScrollIndicator={false}
-                        nestedScrollEnabled={true}
                         contentContainerStyle={styles.scrollViewContent}
                     >
                         {medicine?.reminder?.map((time, index) => (
@@ -55,41 +67,24 @@ export function MedicationCardItem({ medicine, onDelete, selectedDate, status })
                         ))}
                     </ScrollView>
                 </View>
-
-                {/* Button to navigate to the action model */}
-                <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={() => router.push({
-                        pathname: 'action-model',
-                        params: {
-                            ...medicine,
-                            selectedDate: selectedDate,
-                            reminders: JSON.stringify(medicine.reminder),
-                        },
-                    })}
-                >
-                    <Text style={styles.actionButtonText}>Take Med</Text>
-                </TouchableOpacity>
             </View>
 
-            {/* Delete Button */}
             <TouchableOpacity onPress={onDelete} style={styles.deleteButton}>
                 <MaterialIcons name="delete" size={24} color="red" />
-                <Text style={{ color: 'red', fontSize: 10, fontWeight: '200' }}>Delete</Text>
+                <Text style={styles.deleteButtonText}>Delete</Text>
             </TouchableOpacity>
         </View>
     );
-}
+};
 
 const styles = StyleSheet.create({
     container: {
-        padding: 15,
+        padding: 10,
         backgroundColor: Colors.BACKGROUND,
-        marginVertical: 8,
+        marginVertical: 10,
         borderRadius: 20,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '99%',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOpacity: 0.1,
@@ -99,6 +94,7 @@ const styles = StyleSheet.create({
     subContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
     },
     image: {
         width: 50,
@@ -108,16 +104,12 @@ const styles = StyleSheet.create({
     },
     textContainer: {
         justifyContent: 'center',
+        flex: 1,
     },
     textName: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#333',
-    },
-    textWhen: {
-        fontSize: 14,
-        color: '#666',
-        marginTop: 2,
     },
     textDose: {
         fontSize: 14,
@@ -125,75 +117,62 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginTop: 2,
     },
-    statusContainer: {
+    statusIndicator: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginVertical: 10,
+        paddingVertical: 3,
+        paddingHorizontal: 8,
+        borderRadius: 10,
+        alignSelf: 'flex-start',
+        marginTop: 10,
     },
     statusText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: Colors.PRIMARY,
+        fontSize: 12,
+        color: Colors.WHITE,
+        fontWeight: 'bold',
+        marginRight: 5,
     },
-    progressBar: {
-        width: 100,
-        height: 8,
-        backgroundColor: Colors.LIGHT_GRAY_BORDER,
-        borderRadius: 4,
-        marginTop: 5,
-        overflow: 'hidden',
-    },
-    progressFill: {
-        height: '100%',
-        backgroundColor: Colors.PRIMARY,
-        borderRadius: 4,
+    statusCount: {
+        fontSize: 12,
+        color: Colors.WHITE,
     },
     reminderWrapper: {
-        alignItems: 'center',
+        marginHorizontal: 5,
     },
     reminderContainer: {
-        width: 110,
-        height: 41,
+        width: 90,
+        height: 40,
         backgroundColor: 'white',
         borderRadius: 15,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-        elevation: 3,
     },
     scrollViewContent: {
-        alignItems: 'flex-start',
-        padding: 2.9,
+        alignItems: 'center',
+        paddingHorizontal: 5,
     },
     reminderPill: {
-        width: 94.9,
-        height: 35,
-        marginHorizontal: 5,
+        height: 30,
+        paddingHorizontal: 10,
         backgroundColor: Colors.PRIMARY,
         justifyContent: 'center',
         alignItems: 'center',
         borderRadius: 12,
+        marginHorizontal: 3,
     },
     reminderText: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: 'white',
-    },
-    actionButton: {
-        width: 94.9,
-        height: 35,
-        backgroundColor: Colors.PRIMARY,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: 12,
-        marginTop: 10,
-    },
-    actionButtonText: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '500',
         color: 'white',
     },
     deleteButton: {
         alignItems: 'center',
+        marginLeft: 10,
+    },
+    deleteButtonText: {
+        color: 'red',
+        fontSize: 10,
+        fontWeight: '200',
     },
 });
+
+export default MedicationCardItem;
