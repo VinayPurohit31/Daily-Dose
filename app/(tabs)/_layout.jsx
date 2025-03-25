@@ -53,6 +53,16 @@ export default function TabLayout() {
                     ),
                 }}
             />
+             <Tabs.Screen 
+                name='History'
+                options={{
+                    tabBarLabel: 'History', // Fixed typo here
+                    tabBarIcon: ({ color, size }) => (
+                        <FontAwesome5 name="history" size={24} color={color} />
+                    ),
+                    
+                }}
+            />
             <Tabs.Screen 
                 name='Profile'
                 options={{
@@ -62,6 +72,7 @@ export default function TabLayout() {
                     ),
                 }}
             />
+            
         </Tabs>
     );
 }

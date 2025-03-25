@@ -3,7 +3,7 @@ import Colors from '../constant/Colors';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-const MedicationCardItem = ({ medicine, onDelete, selectedDate, status }) => {
+const MedicationCardItemHistory = ({ medicine, onDelete, selectedDate, status }) => {
     const router = useRouter();
 
     const getStatusColor = () => {
@@ -20,28 +20,16 @@ const MedicationCardItem = ({ medicine, onDelete, selectedDate, status }) => {
         return 'Not Taken';
     };
 
-    const handlePress = () => {
-        router.push({
-            pathname: "/action-model",
-            params: {
-                ...medicine,
-                selectedDate: selectedDate,
-                reminders: JSON.stringify(medicine.reminder || []),
-                medId: medicine.id
-            }
-        });
-    };
-
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.subContainer} onPress={handlePress}>
+            <View style={styles.subContainer} >
                 <Image
                     source={{ uri: medicine?.type?.icon }}
                     style={styles.image}
                 />
                 <View style={styles.textContainer}>
-                    <Text style={styles.textName}>{medicine.medName}</Text>
-                    <Text style={styles.textName}>{medicine.illnessName}</Text>
+                    <Text style={styles.textName}>Med: {medicine.medName}</Text>
+                    <Text style={styles.textName}>Illn: {medicine.illnessName}</Text>
                     <Text style={styles.textDose}>Dose: {medicine.dose}</Text>
                     <Text style={styles.textDose}>Tupe: {medicine.type.name}</Text>
                     <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]}>
@@ -51,7 +39,7 @@ const MedicationCardItem = ({ medicine, onDelete, selectedDate, status }) => {
                         </Text>
                     </View>
                 </View>
-            </TouchableOpacity>
+            </View>
 
             <View style={styles.reminderWrapper}>
                 <View style={styles.reminderContainer}>
@@ -175,4 +163,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default MedicationCardItem;
+export default MedicationCardItemHistory ;

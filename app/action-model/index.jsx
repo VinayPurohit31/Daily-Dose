@@ -65,12 +65,12 @@ export default function MedicationActionModel() {
           initialStatus[time] = STATUS.PENDING;
         }
       });
-      
+
       setStatusMap(initialStatus);
     } catch (error) {
       console.error("Error fetching reminder status:", error);
       Alert.alert("Error", "Failed to load medication status");
-      
+
       // Initialize all as pending
       const initialStatus = {};
       reminders.forEach(time => {
@@ -121,7 +121,7 @@ export default function MedicationActionModel() {
   };
 
   const getStatusIcon = (time) => {
-    switch(statusMap[time]) {
+    switch (statusMap[time]) {
       case STATUS.TAKEN: return '✔️';
       case STATUS.MISSED: return '❌';
       default: return '';
@@ -131,8 +131,8 @@ export default function MedicationActionModel() {
   const getButtonStyle = (buttonType) => {
     if (loading) return styles.disabledButton;
     if (!selectedTime) return styles.disabledButton;
-    
-    switch(buttonType) {
+
+    switch (buttonType) {
       case 'cancel':
         return statusMap[selectedTime] === STATUS.PENDING ? styles.disabledButton : styles.cancelButton;
       case 'missed':
@@ -199,7 +199,7 @@ export default function MedicationActionModel() {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={getButtonStyle('cancel')}
+          style={[styles.button, statusMap[selectedTime] === STATUS.PENDING ? styles.disabledButton : styles.cancelButton]}
           onPress={handleCancel}
           disabled={loading || !selectedTime || statusMap[selectedTime] === STATUS.PENDING}
         >
@@ -207,7 +207,7 @@ export default function MedicationActionModel() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={getButtonStyle('missed')}
+          style={[styles.button, statusMap[selectedTime] === STATUS.MISSED ? styles.disabledButton : styles.missedButton]}
           onPress={handleMissed}
           disabled={loading || !selectedTime || statusMap[selectedTime] === STATUS.MISSED}
         >
@@ -215,125 +215,138 @@ export default function MedicationActionModel() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={getButtonStyle('taken')}
+          style={[styles.button, statusMap[selectedTime] === STATUS.TAKEN ? styles.disabledButton : styles.takenButton]}
           onPress={handleTaken}
           disabled={loading || !selectedTime || statusMap[selectedTime] === STATUS.TAKEN}
         >
           <Text style={styles.buttonText}>Taken</Text>
         </TouchableOpacity>
       </View>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20, 
-    backgroundColor: Colors.LIGHT_BACKGROUND 
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: Colors.LIGHT_BACKGROUND
   },
-  header: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    marginBottom: 20 
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20
   },
-  backButton: { 
-    padding: 10 
+  backButton: {
+    padding: 10
   },
-  headerTitle: { 
-    fontSize: 22, 
-    fontWeight: 'bold', 
-    color: Colors.PRIMARY, 
-    marginLeft: 10 
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: Colors.PRIMARY,
+    marginLeft: 10
   },
-  imageContainer: { 
-    alignItems: 'center', 
-    marginBottom: 20 
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 20
   },
-  card: { 
-    backgroundColor: Colors.BACKGROUND, 
-    borderRadius: 15, 
-    padding: 20, 
-    marginBottom: 20, 
-    elevation: 3 
+  card: {
+    backgroundColor: Colors.BACKGROUND,
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 3
   },
-  detailRow: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    marginBottom: 10 
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10
   },
-  detailLabel: { 
-    fontSize: 18, 
-    fontWeight: '600', 
-    color: Colors.DARK 
+  detailLabel: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: Colors.DARK
   },
-  detailValue: { 
-    fontSize: 18, 
-    color: Colors.SECONDARY, 
-    fontWeight: '500' 
+  detailValue: {
+    fontSize: 18,
+    color: Colors.SECONDARY,
+    fontWeight: '500'
   },
-  actionText: { 
-    fontSize: 20, 
-    fontWeight: 'bold', 
-    color: Colors.PRIMARY, 
-    marginBottom: 10, 
-    textAlign: 'center' 
+  actionText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.PRIMARY,
+    marginBottom: 10,
+    textAlign: 'center'
   },
-  pickerContainer: { 
-    backgroundColor: Colors.BACKGROUND, 
-    borderRadius: 10, 
-    marginBottom: 20, 
-    paddingHorizontal: 10, 
+  pickerContainer: {
+    backgroundColor: Colors.BACKGROUND,
+    borderRadius: 10,
+    marginBottom: 20,
+    paddingHorizontal: 10,
     elevation: 2,
     minHeight: 50,
-    justifyContent: 'center' 
+    justifyContent: 'center'
   },
-  picker: { 
-    height: 50 
+  picker: {
+    height: 50
   },
-  noReminderText: { 
-    fontSize: 18, 
-    color: Colors.GRAY, 
-    textAlign: 'center', 
-    marginBottom: 20 
+  noReminderText: {
+    fontSize: 18,
+    color: Colors.GRAY,
+    textAlign: 'center',
+    marginBottom: 20
   },
   buttonContainer: {
+    position: 'absolute',  
+    bottom: 140,  
+    left: 20,  
+    right: 20,  
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 20,
-    paddingHorizontal: 10,
   },
+  
   button: {
     flex: 1,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 15,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 5,
+    marginHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5,
+    elevation: 4,
   },
+  
   cancelButton: {
     backgroundColor: Colors.DARK_GRAY,
   },
+  
   takenButton: {
     backgroundColor: Colors.PRIMARY,
   },
+  
   missedButton: {
     backgroundColor: Colors.ERROR,
   },
+  
   disabledButton: {
-    backgroundColor: Colors.LIGHT_GRAY,
+    backgroundColor: '#d1d1d1',
+    opacity: 0.6,
   },
+  
   buttonText: {
     color: Colors.WHITE,
     fontSize: 16,
     fontWeight: 'bold',
     textTransform: 'uppercase',
     textAlign: 'center',
+    letterSpacing: 0.8,
   },
+  
+
 });

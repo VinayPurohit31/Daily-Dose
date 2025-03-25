@@ -1,40 +1,38 @@
 import { 
-    View, Text, StyleSheet, Image, TouchableOpacity, FlatList, 
-    ActivityIndicator, ScrollView, Alert, RefreshControl 
+    View, StyleSheet, FlatList, 
+    ActivityIndicator, Alert, RefreshControl 
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { useRouter } from 'expo-router';
 import { collection, query, where, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore';
 
-import { db } from '../config/FireBaseConfig';
-import { getLocalStorage } from '../service/Storage';
-import { GetDateRangeToDisplay } from '../service/ConvertDateTime';
-import MedicationCardItem from "../components/MedacationCardItem";
-import EmptyState from '../components/EmptyState';
-import Colors from '../constant/Colors';
+import { db } from '../../config/FireBaseConfig';
+import { getLocalStorage } from '../../service/Storage';
 
-const MedicationList = () => {
+import Colors from '../../constant/Colors';
+import MedicationCardItemHistory from '../../components/MedicationCardItemHistory';
+
+const History = () => {
     const [medList, setMedList] = useState([]);
-    const [dateRange, setDateRange] = useState([]);
     const [selectedDate, setSelectedDate] = useState(moment().format('MM/DD/YYYY'));
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     
     const router = useRouter();
 
-    useEffect(() => {
-        GetDateRangeList();
-    }, []);
+    // useEffect(() => {
+    //     GetDateRangeList();
+    // }, []);
 
     useEffect(() => {
         GetMedicationList(selectedDate);
     }, [selectedDate]);
 
-    const GetDateRangeList = () => {
-        const range = GetDateRangeToDisplay();
-        setDateRange(range);
-    };
+    // const GetDateRangeList = () => {
+    //     const range = GetDateRangeToDisplay();
+    //     setDateRange(range);
+    // };
 
     const GetMedicationList = async (selectedDate) => {
         setLoading(true);
@@ -47,7 +45,7 @@ const MedicationList = () => {
             const q = query(
                 collection(db, 'medication'),
                 where('userEmail', '==', user.email),
-                where('dates', 'array-contains', selectedDate)
+
             );
       
             const querySnapshot = await getDocs(q);
@@ -131,46 +129,19 @@ const MedicationList = () => {
 
     return (
         <View style={styles.container}>
-            <Image style={styles.imageStyle} source={require('../assets/images/medical_illustration.jpeg')} />
-
-            <View style={styles.dateRangeContainer}>
-                <FlatList
-                    data={dateRange}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    keyExtractor={(item) => item.formattedDate}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity
-                            style={[
-                                styles.listDateGroup,
-                                { backgroundColor: item.formattedDate === selectedDate ? Colors.PRIMARY : Colors.LIGHT_GRAY_BORDER }
-                            ]}
-                            onPress={() => setSelectedDate(item.formattedDate)}
-                        >
-                            <Text style={[styles.day, { color: item.formattedDate === selectedDate ? 'white' : 'black' }]}>
-                                {item.day}
-                            </Text>
-                            <Text style={[styles.date, { color: item.formattedDate === selectedDate ? 'white' : 'black' }]}>
-                                {item.date}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-                />
-            </View>
+          
 
             <FlatList
                 data={medList}
                 keyExtractor={(item) => item.id}
                 renderItem={({ item }) => (
-                    <MedicationCardItem
+                    <MedicationCardItemHistory
                         medicine={item}
                         onDelete={() => handleDeleteMedication(item.id)}
-                        selectedDate={selectedDate}
                         status={item.status}
                     />
                 )}
                 showsVerticalScrollIndicator={false}
-                ListEmptyComponent={<EmptyState message="No medication records found for this date." />}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.PRIMARY]} />
                 }
@@ -180,38 +151,12 @@ const MedicationList = () => {
     );
 };
 
-export default MedicationList;
+export default History;
 const styles = StyleSheet.create({
     container: {
-        marginTop: 10,
+        marginTop: 5,
         flex: 1,
         paddingHorizontal: 15,
-    },
-    imageStyle: {
-        width: '100%',
-        height: 200,
-        borderRadius: 15,
-    },
-    dateRangeContainer: {
-        height: 100,
-        // width: '100%',
-        marginTop: 10,
-        marginBottom: 10,
-    },
-    listDateGroup: {
-        padding: 10,
-        backgroundColor: Colors.LIGHT_GRAY_BORDER,
-        alignItems: 'center',
-        marginRight: 10,
-        borderRadius: 15,
-        width: 60,
-    },
-    day: {
-        fontSize: 16,
-    },
-    date: {
-        fontSize: 22,
-        fontWeight: 'bold',
     },
     scrollContainer: {
         flexGrow: 1,
