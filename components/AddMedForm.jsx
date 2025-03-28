@@ -101,7 +101,7 @@ export default function AddMedForm() {
                     // Show TextInput if user wants to enter a new illness
                     <TextInput
                         style={styles.textInput}
-                        placeholder="Enter Illness Name"
+                        placeholder="Enter Medical Condition "
                         value={formData.illnessName}
                         onChangeText={(value) => onHandleInputChange('illnessName', value)}
                     />
@@ -120,11 +120,11 @@ export default function AddMedForm() {
                         }}
                         style={styles.picker}
                     >
-                        <Picker.Item label="Select Illness or Enter New" value="" />
+                        <Picker.Item label="Select Medical Condition or Enter New" value="" />
                         {illnessList.map((illness, index) => (
                             <Picker.Item key={index} label={illness} value={illness} />
                         ))}
-                        <Picker.Item label="Enter New Illness" value="new" />
+                        <Picker.Item label="Enter New Medical Condition " value="new" />
                     </Picker>
                 )}
             </View>
