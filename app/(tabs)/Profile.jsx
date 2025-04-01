@@ -1,58 +1,101 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../../config/FireBaseConfig';
 import { useRouter } from 'expo-router';
-import { getDoc, doc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Profile() {
     const router = useRouter();
     const [user, setUser] = useState(null);
-    const [adherenceRate, setAdherenceRate] = useState(75); // 3 out of 4 = 75%
     const [medications, setMedications] = useState([]);
+    const [takenCount, setTakenCount] = useState(0);
+    const [missedCount, setMissedCount] = useState(0);
 
     useEffect(() => {
         const fetchUserData = async () => {
             const currentUser = auth.currentUser;
-            if (currentUser) {
-                setUser({
-                    name: currentUser.displayName || 'Anonymous',
-                    email: currentUser.email,
+            if (!currentUser) {
+                router.replace('/login');
+                return;
+            }
+
+            // Set up real-time listener for user data
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userUnsubscribe = onSnapshot(userDocRef, (doc) => {
+                if (doc.exists()) {
+                    setUser({
+                        name: doc.data().name || currentUser.displayName || 'Anonymous',
+                        email: currentUser.email,
+                    });
+                }
+            });
+
+            // Set up real-time listener for medications
+            const medsRef = collection(db, 'users', currentUser.uid, 'medication');
+            const medsUnsubscribe = onSnapshot(medsRef, (querySnapshot) => {
+                const meds = [];
+                querySnapshot.forEach((doc) => {
+                    meds.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Set fixed medication data (3 taken, 1 missed)
-                setMedications([
-                    { name: 'Metformin', time: 'Morning', taken: true, dose: '1 pill' },
-                    { name: 'Lisinopril', time: 'Noon', taken: true, dose: '1 pill' },
-                    { name: 'Atorvastatin', time: 'Evening', taken: true, dose: '1 pill' },
-                    { name: 'Levothyroxine', time: 'Night', taken: false, dose: '1 pill' }
-                ]);
-            }
+                // Use actual data or fallback if empty
+                const displayMeds = meds.length > 0 ? meds.slice(0, 4) : getFallbackMeds();
+                
+                // Mark 3 as taken, 1 as missed
+                const shuffled = [...displayMeds].sort(() => 0.5 - Math.random());
+                const finalMeds = shuffled.map((med, index) => ({
+                    ...med,
+                    taken: index < 3 // First 3 are taken
+                }));
+
+                setMedications(finalMeds);
+                setTakenCount(3);
+                setMissedCount(1);
+            });
+
+            return () => {
+                userUnsubscribe();
+                medsUnsubscribe();
+            };
         };
 
         fetchUserData();
     }, []);
 
-    const handleLogout = () => {
-        signOut(auth)
-            .then(() => {
-                console.log('User signed out');
-                router.replace('/login/signin');
-            })
-            .catch((error) => {
-                console.error('Error signing out:', error);
-                alert('Logout failed: ' + error.message);
-            });
+    const getFallbackMeds = () => {
+        return [
+            { id: '1', name: 'Metformin', time: 'Morning', dose: '1 pill' },
+            { id: '2', name: 'Lisinopril', time: 'Noon', dose: '1 pill' },
+            { id: '3', name: 'Atorvastatin', time: 'Evening', dose: '1 pill' },
+            { id: '4', name: 'Levothyroxine', time: 'Night', dose: '1 pill' }
+        ];
     };
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            router.replace('/login');
+        } catch (error) {
+            console.error('Logout failed:', error);
+            Alert.alert('Logout Failed', error.message);
+        }
+    };
+
+    const adherenceRate = medications.length > 0 
+        ? Math.round((takenCount / medications.length) * 100) 
+        : 0;
 
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             <View style={styles.container}>
                 {/* User Details */}
-                <View style={styles.profileTextContainer}>
-                    <Text style={styles.name}>{user?.name}</Text>
-                    <Text style={styles.email}>{user?.email}</Text>
+                <View style={styles.profileHeader}>
+                    <View style={styles.profileTextContainer}>
+                        <Text style={styles.name}>{user?.name}</Text>
+                        <Text style={styles.email}>{user?.email}</Text>
+                    </View>
                 </View>
 
                 {/* Adherence Stats */}
@@ -74,13 +117,13 @@ export default function Profile() {
                     <View style={styles.statsRow}>
                         <View style={styles.statItem}>
                             <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-                            <Text style={styles.statNumber}>3</Text>
+                            <Text style={styles.statNumber}>{takenCount}</Text>
                             <Text style={styles.statLabel}>Taken</Text>
                         </View>
                         
                         <View style={styles.statItem}>
                             <Ionicons name="close-circle" size={24} color="#F44336" />
-                            <Text style={styles.statNumber}>1</Text>
+                            <Text style={styles.statNumber}>{missedCount}</Text>
                             <Text style={styles.statLabel}>Missed</Text>
                         </View>
                     </View>
@@ -90,8 +133,8 @@ export default function Profile() {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Your Medications</Text>
                     <View style={styles.medicationsCard}>
-                        {medications.map((med, index) => (
-                            <View key={index} style={styles.medicationItem}>
+                        {medications.map((med) => (
+                            <View key={med.id} style={styles.medicationItem}>
                                 <Ionicons 
                                     name={med.taken ? "checkmark-circle" : "close-circle"} 
                                     size={20} 
@@ -145,14 +188,17 @@ const styles = StyleSheet.create({
     scrollContainer: {
         flexGrow: 1,
         backgroundColor: '#f5f5f5',
+        paddingBottom: 20,
     },
     container: {
         flex: 1,
         padding: 20,
-        paddingBottom: 40,
+    },
+    profileHeader: {
+        marginBottom: 30,
     },
     profileTextContainer: {
-        marginBottom: 30,
+        marginBottom: 10,
     },
     name: {
         fontSize: 24,
@@ -246,6 +292,7 @@ const styles = StyleSheet.create({
     },
     medicationDetails: {
         marginLeft: 15,
+        flex: 1,
     },
     medicationName: {
         fontSize: 16,

@@ -32,12 +32,7 @@ const MedicationCardItemHistory = ({ medicine, onDelete, selectedDate, status })
                     <Text style={styles.textName}>Illn: {medicine.illnessName}</Text>
                     <Text style={styles.textDose}>Dose: {medicine.dose}</Text>
                     <Text style={styles.textDose}>Tupe: {medicine.type.name}</Text>
-                    <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]}>
-                        <Text style={styles.statusText}>{getStatusText()}</Text>
-                        <Text style={styles.statusCount}>
-                            ({status.takenCount}/{status.totalReminders} taken)
-                        </Text>
-                    </View>
+                
                 </View>
             </View>
 
@@ -104,25 +99,6 @@ const styles = StyleSheet.create({
         color: Colors.PRIMARY,
         fontWeight: '600',
         marginTop: 2,
-    },
-    statusIndicator: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 3,
-        paddingHorizontal: 8,
-        borderRadius: 10,
-        alignSelf: 'flex-start',
-        marginTop: 10,
-    },
-    statusText: {
-        fontSize: 12,
-        color: Colors.WHITE,
-        fontWeight: 'bold',
-        marginRight: 5,
-    },
-    statusCount: {
-        fontSize: 12,
-        color: Colors.WHITE,
     },
     reminderWrapper: {
         marginHorizontal: 10,

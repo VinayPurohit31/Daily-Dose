@@ -40,8 +40,8 @@ const MedicationCardItem = ({ medicine, onDelete, selectedDate, status }) => {
                     style={styles.image}
                 />
                 <View style={styles.textContainer}>
-                    <Text style={styles.textName}>{medicine.medName}</Text>
-                    <Text style={styles.textName}>{medicine.illnessName}</Text>
+                    <Text style={styles.textName}>MN:-{medicine.medName}</Text>
+                    <Text style={styles.textName}>Ill:-{medicine.illnessName}</Text>
                     <Text style={styles.textDose}>Dose: {medicine.dose}</Text>
                     <Text style={styles.textDose}>Tupe: {medicine.type.name}</Text>
                     <View style={[styles.statusIndicator, { backgroundColor: getStatusColor() }]}>

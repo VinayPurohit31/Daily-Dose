@@ -1,72 +1,94 @@
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../../config/FireBaseConfig';
-import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { useRouter } from 'expo-router';
 
-export default function ProfileEdit({ navigation }) {
+export default function ProfileEdit() {
+    const router = useRouter();
     const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [initialName, setInitialName] = useState('');
 
+    // Set up real-time listener for user data
     useEffect(() => {
-        const fetchUserProfile = async () => {
-            const user = auth.currentUser;
-            if (user) {
-                const userDocRef = doc(db, 'users', user.uid);
-                const userDoc = await getDoc(userDocRef);
+        const user = auth.currentUser;
+        if (!user) {
+            router.push('/login');
+            return;
+        }
 
-                if (userDoc.exists()) {
-                    setName(userDoc.data().name);
-                    setEmail(userDoc.data().email);
-                } else {
-                    setName(user.displayName || '');
-                    setEmail(user.email || '');
-                }
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribe = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                const userData = doc.data();
+                setName(userData.name || user.displayName || '');
+                setInitialName(userData.name || user.displayName || '');
             }
-        };
+        });
 
-        fetchUserProfile();
+        return () => unsubscribe();
     }, []);
 
-    const updateUserProfile = async () => {
+    const handleUpdateProfile = async () => {
         try {
+            if (!name.trim()) {
+                Alert.alert('Error', 'Name cannot be empty');
+                return;
+            }
+
+            if (name === initialName) {
+                Alert.alert('Info', 'No changes made');
+                return;
+            }
+
+            setLoading(true);
             const user = auth.currentUser;
             if (!user) throw new Error('User not authenticated');
 
             const userDocRef = doc(db, 'users', user.uid);
-            const userDoc = await getDoc(userDocRef);
+            
+            await setDoc(userDocRef, { 
+                name: name.trim(),
+                updatedAt: new Date().toISOString() 
+            }, { merge: true });
 
-            if (userDoc.exists()) {
-                await updateDoc(userDocRef, { name, email });
-            } else {
-                await setDoc(userDocRef, { name, email });
-            }
-
-            Alert.alert('Success', 'Profile updated successfully!');
-            navigation.goBack(); // Navigate back to profile screen
+            Alert.alert('Success', 'Name updated successfully!');
+            router.back();
         } catch (error) {
-            console.error('Error updating profile:', error);
-            Alert.alert('Error', 'Failed to update profile: ' + error.message);
+            console.error('Update error:', error);
+            Alert.alert('Error', 'Failed to update name: ' + error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <View style={styles.container}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={styles.title}>Edit Profile</Text>
+            
+            <Text style={styles.label}>Your Name</Text>
             <TextInput
                 style={styles.input}
                 value={name}
                 onChangeText={setName}
                 placeholder="Enter your name"
+                editable={!loading}
+                autoFocus
             />
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder="Enter your email"
-                keyboardType="email-address"
-            />
-            <Button title="Save Profile" onPress={updateUserProfile} />
+
+            <TouchableOpacity
+                style={[
+                    styles.saveButton,
+                    (loading || name === initialName) && styles.saveButtonDisabled
+                ]}
+                onPress={handleUpdateProfile}
+                disabled={loading || name === initialName}
+            >
+                <Text style={styles.saveButtonText}>
+                    {loading ? 'Saving...' : 'Save Changes'}
+                </Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -75,18 +97,43 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        justifyContent: 'center',
+        backgroundColor: '#fff',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 30,
+        color: '#333',
+        textAlign: 'center',
     },
     label: {
         fontSize: 16,
-        fontWeight: 'bold',
-        marginBottom: 5,
+        fontWeight: '600',
+        marginBottom: 8,
+        color: '#555',
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ccc',
-        padding: 10,
-        borderRadius: 5,
-        marginBottom: 15,
+        borderColor: '#ddd',
+        padding: 15,
+        borderRadius: 10,
+        marginBottom: 25,
+        fontSize: 16,
+        backgroundColor: '#f9f9f9',
+    },
+    saveButton: {
+        backgroundColor: '#007AFF',
+        padding: 16,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    saveButtonDisabled: {
+        backgroundColor: '#A0C4FF',
+    },
+    saveButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
