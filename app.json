@@ -34,7 +34,16 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo1.png",
+          "color": "#FFFFFF",
+          "androidMode": "default",
+          "androidCollapsedTitle": "Daily Dose Reminder"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

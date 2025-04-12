@@ -86,7 +86,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.dailydose"
+    namespace 'com.vinay31.DailyDose'
     defaultConfig {
         applicationId 'com.vinay31.DailyDose'
         minSdkVersion rootProject.ext.minSdkVersion

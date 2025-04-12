@@ -24,15 +24,15 @@ export default function AddMedForm() {
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [loading, setLoading] = useState(false);
     const [illnessList, setIllnessList] = useState([]);
-    const [showIllnessInput, setShowIllnessInput] = useState(false); // State to toggle between Picker and TextInput
+    const [showIllnessInput, setShowIllnessInput] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
-        const fetchIllnesses = async () => {
+        const initialize = async () => {
             const querySnapshot = await getDocs(collection(db, 'illnesses'));
             setIllnessList(querySnapshot.docs.map(doc => doc.id));
         };
-        fetchIllnesses();
+        initialize();
     }, []);
 
     const onHandleInputChange = (field, value) => {
@@ -56,15 +56,16 @@ export default function AddMedForm() {
     };
 
     const SaveMedication = async () => {
-        const docId = Date.now().toString();
-        const user = await getLocalStorage('userDetail');
-
-        if (!(formData?.illnessName && formData?.medName && formData?.type && formData?.dose && formData?.startDate && formData?.endDate && formData?.reminder.length)) {
-            Alert.alert("Missing Fields", "Please fill in all the required fields.");
+        if (!(formData?.illnessName && formData?.medName && formData?.type && 
+              formData?.dose && formData?.startDate && formData?.endDate && 
+              formData?.reminder?.length > 0)) {
+            Alert.alert("Missing Fields", "Please fill in all required fields and add at least one reminder time.");
             return;
         }
 
-        const dates = getDatesRange(formData?.startDate, formData.endDate);
+        const docId = Date.now().toString();
+        const user = await getLocalStorage('userDetail');
+        const dates = getDatesRange(formData.startDate, formData.endDate);
         setLoading(true);
 
         try {
@@ -79,14 +80,14 @@ export default function AddMedForm() {
                 await setDoc(doc(db, 'illnesses', formData.illnessName), {});
             }
 
-            setLoading(false);
-            Alert.alert("Success", "Medication added successfully!", [
-                { text: 'Ok', onPress: () => router.push('(tabs)') }
+            Alert.alert("Success", "Medication saved successfully!", [
+                { text: 'OK', onPress: () => router.push('(tabs)') }
             ]);
-        } catch (e) {
+        } catch (error) {
+            console.error("Save failed:", error);
+            Alert.alert("Error", "Failed to save medication. Please try again.");
+        } finally {
             setLoading(false);
-            console.log(e);
-            Alert.alert("Error", "Something went wrong. Please try again.");
         }
     };
 
@@ -98,20 +99,17 @@ export default function AddMedForm() {
             <View style={styles.input}>
                 <MaterialCommunityIcons style={styles.icon} name="virus-outline" size={24} color="black" />
                 {showIllnessInput ? (
-                    // Show TextInput if user wants to enter a new illness
                     <TextInput
                         style={styles.textInput}
-                        placeholder="Enter Medical Condition "
+                        placeholder="Enter Medical Condition"
                         value={formData.illnessName}
                         onChangeText={(value) => onHandleInputChange('illnessName', value)}
                     />
                 ) : (
-                    // Show Picker if user wants to select an existing illness
                     <Picker
                         selectedValue={formData.illnessName}
                         onValueChange={(value) => {
                             if (value === "new") {
-                                // If "Enter New Illness" is selected, show the TextInput
                                 setShowIllnessInput(true);
                                 onHandleInputChange('illnessName', '');
                             } else {
@@ -120,11 +118,11 @@ export default function AddMedForm() {
                         }}
                         style={styles.picker}
                     >
-                        <Picker.Item label="Select Medical Condition or Enter New" value="" />
+                        <Picker.Item label="Select Medical Condition" value="" />
                         {illnessList.map((illness, index) => (
                             <Picker.Item key={index} label={illness} value={illness} />
                         ))}
-                        <Picker.Item label="Enter New Medical Condition " value="new" />
+                        <Picker.Item label="Enter New Condition" value="new" />
                     </Picker>
                 )}
             </View>
@@ -186,7 +184,6 @@ export default function AddMedForm() {
 
             {/* Start & End Date */}
             <View style={styles.dateGroup}>
-                {/* Start Date */}
                 <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowStartDate(true)}>
                     <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
                     <Text style={styles.inputDate}>
@@ -208,7 +205,6 @@ export default function AddMedForm() {
                     />
                 )}
 
-                {/* End Date */}
                 <TouchableOpacity style={[styles.input, { flex: 1 }]} onPress={() => setShowEndDate(true)}>
                     <MaterialIcons style={styles.icon} name="date-range" size={24} color="black" />
                     <Text style={styles.inputDate}>
@@ -218,7 +214,7 @@ export default function AddMedForm() {
 
                 {showEndDate && (
                     <RNDateTimePicker
-                        minimumDate={new Date()}
+                        minimumDate={formData?.startDate ? new Date(formData.startDate) : new Date()}
                         mode="date"
                         onChange={(event, selectedDate) => {
                             setShowEndDate(false);
@@ -233,19 +229,28 @@ export default function AddMedForm() {
 
             {/* Reminder Times */}
             <Text style={styles.subHeader}>Reminder Times</Text>
-            <View>
-                {formData.reminder.map((time, index) => (
-                    <View key={index} style={styles.reminderRow}>
-                        <Text style={styles.reminderText}>{time}</Text>
+            <FlatList
+                data={formData.reminder}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item, index }) => (
+                    <View style={styles.reminderRow}>
+                        <Text style={styles.reminderText}>{item}</Text>
                         <TouchableOpacity onPress={() => removeReminderTime(index)}>
                             <MaterialIcons name="cancel" size={20} color="red" />
                         </TouchableOpacity>
                     </View>
-                ))}
-            </View>
-            <TouchableOpacity style={styles.input} onPress={() => setShowTimePicker(true)}>
+                )}
+                ListEmptyComponent={
+                    <Text style={styles.noRemindersText}>No reminders added yet</Text>
+                }
+            />
+
+            <TouchableOpacity 
+                style={styles.addReminderButton} 
+                onPress={() => setShowTimePicker(true)}
+            >
                 <Entypo style={styles.icon} name="stopwatch" size={24} color="black" />
-                <Text style={styles.buttonText}>+ Add Reminder</Text>
+                <Text style={styles.addReminderText}>Add Reminder Time</Text>
             </TouchableOpacity>
 
             {showTimePicker && (
@@ -260,11 +265,15 @@ export default function AddMedForm() {
             )}
 
             {/* Save Button */}
-            <TouchableOpacity style={styles.buttonE} onPress={SaveMedication} disabled={loading}>
+            <TouchableOpacity 
+                style={styles.saveButton} 
+                onPress={SaveMedication} 
+                disabled={loading}
+            >
                 {loading ? (
                     <ActivityIndicator size="large" color="white" />
                 ) : (
-                    <Text style={styles.buttonTextL}>Add Medication</Text>
+                    <Text style={styles.saveButtonText}>Save Medication</Text>
                 )}
             </TouchableOpacity>
         </View>
@@ -275,11 +284,14 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
+        backgroundColor: Colors.LIGHT_BACKGROUND
     },
     header: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
+        color: Colors.PRIMARY,
+        textAlign: 'center'
     },
     input: {
         flexDirection: 'row',
@@ -288,27 +300,30 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 8,
         borderColor: Colors.GRAY,
-        marginBottom: 20,
+        marginBottom: 15,
+        backgroundColor: 'white'
     },
     textInput: {
         flex: 1,
         fontSize: 16,
         marginLeft: 10,
+        color: Colors.DARK
     },
     icon: {
         color: Colors.PRIMARY,
         marginRight: 10,
         borderRightWidth: 1,
         paddingRight: 15,
-        borderColor: Colors.GRAY,
+        borderColor: Colors.LIGHT_GRAY,
     },
     picker: {
         flex: 1,
-        height: 56,
+        height: 50,
+        color: Colors.DARK
     },
     typeListContainer: {
         paddingVertical: 10,
-        marginBottom: 20,
+        marginBottom: 15,
     },
     inputGroupStyle: {
         paddingVertical: 12,
@@ -320,49 +335,76 @@ const styles = StyleSheet.create({
     },
     typeText: {
         fontSize: 14,
+        fontWeight: '500'
     },
     inputDate: {
-        fontSize: 13,
-        padding: 5,
+        fontSize: 16,
         flex: 1,
         marginLeft: 10,
+        color: Colors.DARK
     },
     dateGroup: {
         flexDirection: 'row',
         gap: 10,
+        marginBottom: 15
     },
-    buttonE: {
-        paddingVertical: 15,
-        borderRadius: 10,
-        marginTop: 10,
-        alignItems: 'center',
-        backgroundColor: Colors.PRIMARY,
-        shadowColor: Colors.PRIMARY,
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.4,
-        shadowRadius: 10,
-        elevation: 5,
-    },
-    buttonTextL: {
+    subHeader: {
         fontSize: 18,
-        color: 'white',
-        fontWeight: 'bold',
+        fontWeight: '600',
+        color: Colors.PRIMARY,
+        marginBottom: 10
     },
     reminderRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 10,
+        padding: 12,
         borderWidth: 1,
         borderRadius: 8,
-        marginBottom: 10,
-        borderColor: Colors.DARK_GRAY,
+        marginBottom: 8,
+        borderColor: Colors.LIGHT_GRAY,
+        backgroundColor: 'white'
     },
     reminderText: {
         fontSize: 16,
+        color: Colors.DARK
     },
-    buttonText: {
-        color: 'black',
+    noRemindersText: {
+        textAlign: 'center',
+        color: Colors.GRAY,
+        marginVertical: 10
+    },
+    addReminderButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderWidth: 1,
+        borderRadius: 8,
+        borderColor: Colors.PRIMARY,
+        backgroundColor: Colors.LIGHT_PRIMARY,
+        marginBottom: 20
+    },
+    addReminderText: {
+        color: Colors.PRIMARY,
         fontSize: 16,
+        fontWeight: '500',
+        marginLeft: 10
     },
+    saveButton: {
+        paddingVertical: 16,
+        borderRadius: 10,
+        backgroundColor: Colors.PRIMARY,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: Colors.PRIMARY,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 5
+    },
+    saveButtonText: {
+        color: 'white',
+        fontSize: 18,
+        fontWeight: 'bold'
+    }
 });
