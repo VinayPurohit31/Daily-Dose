@@ -185,7 +185,7 @@ export default function Report() {
               med.status === 'taken' && { color: Colors.SUCCESS },
               med.status === 'missed' && { color: Colors.DANGER },
             ]}>
-              Status: {med.status}
+              {/* Status: {med.status} */}
             </Text>
           </View>
         ))}
