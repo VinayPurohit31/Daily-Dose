@@ -184,8 +184,3 @@ See the [LICENSE](./LICENSE) file for details.
 
 
 ```
-
----
-
-Let me know if you want help with a **cover image**, **APK generation steps**, or **screenshots section update**.
-```
