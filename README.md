@@ -1,6 +1,3 @@
-Sure Vinay! Here's the **complete `README.md`** content for your **Daily Dose – Smart Medication Management & Adherence Tracker** app, ready for **copy-paste**:
-
----
 
 ```markdown
 # 💊 Daily Dose – Smart Medication Management & Adherence Tracker
